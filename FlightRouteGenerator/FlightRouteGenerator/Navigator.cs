@@ -9,7 +9,7 @@ namespace FlightRouteGenerator
 {
     public static class Navigator
     {
-        public static double GetDistanceBetween(double orgLaty, double orgLonx, double dstLaty, double dstLonx)
+        public static double GetDistanceBetweenGeoCoordinates(double orgLaty, double orgLonx, double dstLaty, double dstLonx)
         {
             double phi1 = orgLaty;
             double phi2 = dstLaty;
@@ -18,6 +18,7 @@ namespace FlightRouteGenerator
             const int r = 3444;
             // earth radius in nmi
 
+            // using the haversine formula to find great circle distance between geographical coordinates
             double h = Math.Pow(Math.Sin((phi2 - phi1) / 2), 2) + Math.Cos(phi1) * Math.Cos(phi2) * Math.Pow(Math.Sin((lambda2 - lambda1) / 2), 2);
 
             return 2 * r * Math.Pow(Math.Sin(Math.Sqrt(h)), -1);
