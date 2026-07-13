@@ -13,6 +13,7 @@ namespace FlightRouteGenerator
         public static Dictionary<string, Record> waypointRecordDict { get; private set; }
         public static Dictionary<string, Record> airportRecordDict { get; private set; }
         public static Dictionary<string, Record> airwayRecordDict { get; private set; }
+        public static Dictionary<string, List<(WaypointRecord, AirwayRecord)>> outgoingAirwaysByWaypointID { get; set; }
 
         private static Dictionary<string, Record> LoadRecords(string typeOfRecord)
         {
@@ -115,6 +116,8 @@ namespace FlightRouteGenerator
             waypointRecordDict = new Dictionary<string, Record>();
             airportRecordDict = new Dictionary<string, Record>();
             airwayRecordDict = new Dictionary<string, Record>();
+
+            
 
             waypointRecordDict = LoadWaypointRecords();
             airportRecordDict = LoadAirportRecords();
