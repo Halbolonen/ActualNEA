@@ -1,20 +1,26 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36717.8 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.7.11919.86 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightRouteGenerator", "FlightRouteGenerator\FlightRouteGenerator.csproj", "{AC8CADA9-51D4-4167-B88D-AF99ABA7B39F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{AC8CADA9-51D4-4167-B88D-AF99ABA7B39F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AC8CADA9-51D4-4167-B88D-AF99ABA7B39F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC8CADA9-51D4-4167-B88D-AF99ABA7B39F}.Debug|x64.ActiveCfg = Debug|x64
+		{AC8CADA9-51D4-4167-B88D-AF99ABA7B39F}.Debug|x64.Build.0 = Debug|x64
 		{AC8CADA9-51D4-4167-B88D-AF99ABA7B39F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC8CADA9-51D4-4167-B88D-AF99ABA7B39F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC8CADA9-51D4-4167-B88D-AF99ABA7B39F}.Release|x64.ActiveCfg = Release|x64
+		{AC8CADA9-51D4-4167-B88D-AF99ABA7B39F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
