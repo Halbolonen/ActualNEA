@@ -37,7 +37,8 @@ namespace FlightRouteGenerator
 
                         void AddToOpenSet()
                         {
-                            newNode.hScore = 1000 * Navigator.GetDistanceBetweenGeoCoordinates(newWaypoint.laty, newWaypoint.lonx,
+                            newNode.gScore = currentBestNode.gScore + airwayLength;
+                            newNode.hScore = Navigator.GetDistanceBetweenGeoCoordinates(newWaypoint.laty, newWaypoint.lonx,
                                 arrivalAirport.laty, arrivalAirport.lonx);
                             newNode.UpdateAStarScore();
                             newNode.associatedWaypoint = newWaypoint;
@@ -63,6 +64,34 @@ namespace FlightRouteGenerator
             }
         }
 
-        public void ExploreOpenSet()
+        public AStarNode ExploreOpenSet(AStarNode currentNode)
+        {
+            WaypointRecord newWaypoint = new WaypointRecord();
+            AStarNode newNode = new AStarNode();
+            newNode = openSet.Dequeue();
+
+            while (openSet.Count > 0 && newNode.hScore > currentNode.hScore)
+            {
+                newNode = openSet.Dequeue();
+            }
+
+            if (openSet.Count == 0 && newNode.hScore > currentNode.hScore)
+            {
+                // panic! there are no more options in the open set
+                // that get us closer to the destination. cheating time!
+
+
+            }
+
+            AStarNode parent = newNode.parent;
+
+            newNode.gScore = parent.gScore + Navigator.GetDistanceBetweenGeoCoordinates(parent.associatedWaypoint.laty, parent.associatedWaypoint.lonx, 
+                newNode.associatedWaypoint.laty, newNode.associatedWaypoint.lonx);
+
+
+            newNode.UpdateAStarScore();
+
+            return newNode;
+        }
     }
 }

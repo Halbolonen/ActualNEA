@@ -23,5 +23,18 @@ namespace FlightRouteGenerator
 
             return 2 * r * Math.Pow(Math.Sin(Math.Sqrt(h)), -1);
         }
+
+        public static WaypointRecord GetBestUsefullyConnectedWaypoint(WaypointRecord currentWaypoint)
+        {
+            foreach (string waypointID in NavdataInteractor.outgoingAirwaysByWaypointID.Keys)
+            {
+                WaypointRecord waypointRecord = (WaypointRecord)NavdataInteractor.waypointRecordDict[waypointID];
+                // firstly, is it closer to the destination?
+
+                // then, does it have any non-explored airways that will lead us closer to the destination?
+
+                // if it does, store it, break the foreach and return it.
+            }
+        }
     }
 }
