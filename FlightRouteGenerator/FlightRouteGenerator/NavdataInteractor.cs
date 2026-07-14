@@ -117,11 +117,68 @@ namespace FlightRouteGenerator
             airportRecordDict = new Dictionary<string, Record>();
             airwayRecordDict = new Dictionary<string, Record>();
 
-            
-
             waypointRecordDict = LoadWaypointRecords();
             airportRecordDict = LoadAirportRecords();
             airwayRecordDict = LoadAirwayRecords();
+
+            outgoingAirwaysByWaypointID = new Dictionary<string, List<(WaypointRecord, AirwayRecord)>>();
+            foreach (AirwayRecord airwayRecord in airwayRecordDict.Values)
+            {
+                if (outgoingAirwaysByWaypointID.TryGetValue(airwayRecord.fromWaypointID, out List<(WaypointRecord, AirwayRecord)> connections))
+                {
+                    outgoingAirwaysByWaypointID[airwayRecord.fromWaypointID].Add(
+                        ((WaypointRecord)waypointRecordDict[airwayRecord.toWaypointID],
+                        airwayRecord));
+                }
+                else
+                {
+                    outgoingAirwaysByWaypointID.Add(airwayRecord.fromWaypointID, new List<(WaypointRecord, AirwayRecord)> {
+                        ((WaypointRecord)waypointRecordDict[airwayRecord.toWaypointID], airwayRecord)});
+                }
+            }
+
+            Console.WriteLine(outgoingAirwaysByWaypointID.Count);
+            Console.WriteLine(waypointRecordDict.Count);
+            Console.WriteLine(airwayRecordDict.Count);
+        }
+
+        public static WaypointRecord FindWaypointByIdent(string inputIdent)
+        {
+            foreach (WaypointRecord waypointRecord in waypointRecordDict.Values)
+            {
+                if (waypointRecord.ident == inputIdent)
+                {
+                    return waypointRecord;
+                }
+            }
+
+            throw new Exception("no waypoint found by ident");
+        }
+
+        public static AirportRecord FindAirportByIdent(string inputIdent)
+        {
+            foreach (AirportRecord airportRecord in airportRecordDict.Values)
+            {
+                if (airportRecord.ident == inputIdent)
+                {
+                    return airportRecord;
+                }
+            }
+
+            throw new Exception("no airport found by ident");
+        }
+
+        public static AirwayRecord FindAirwayByName(string inputName)
+        {
+            foreach (AirwayRecord airwayRecord in airwayRecordDict.Values)
+            {
+                if (airwayRecord.airwayName == inputName)
+                {
+                    return airwayRecord;
+                }
+            }
+
+            throw new Exception("no airway found by ident");
         }
     }
 }

@@ -11,17 +11,19 @@ namespace FlightRouteGenerator
     {
         public static double GetDistanceBetweenGeoCoordinates(double orgLaty, double orgLonx, double dstLaty, double dstLonx)
         {
-            double phi1 = orgLaty;
-            double phi2 = dstLaty;
-            double lambda1 = orgLonx;
-            double lambda2 = dstLonx;
+            const double DEG_TO_RAD = Math.PI / 180;
             const int r = 3444;
             // earth radius in nmi
+
+            double phi1 = orgLaty * DEG_TO_RAD;
+            double phi2 = dstLaty * DEG_TO_RAD;
+            double lambda1 = orgLonx * DEG_TO_RAD;
+            double lambda2 = dstLonx * DEG_TO_RAD;
 
             // using the haversine formula to find great circle distance between geographical coordinates
             double h = Math.Pow(Math.Sin((phi2 - phi1) / 2), 2) + Math.Cos(phi1) * Math.Cos(phi2) * Math.Pow(Math.Sin((lambda2 - lambda1) / 2), 2);
 
-            return 2 * r * Math.Pow(Math.Sin(Math.Sqrt(h)), -1);
+            return 2 * r * Math.Asin(Math.Sqrt(h));
         }
 
         public static WaypointRecord GetBestUsefullyConnectedWaypoint(WaypointRecord currentWaypoint, AirportRecord destination, 
@@ -40,14 +42,23 @@ namespace FlightRouteGenerator
                 double distanceFromCurrentWaypointToDestination = Navigator.GetDistanceBetweenGeoCoordinates(
                     currentWaypoint.laty, currentWaypoint.lonx, destination.laty, destination.lonx);
 
+                if (distanceFromTestWaypointToDestination < distanceFromCurrentWaypointToDestination && testWaypoint.ident == "EZEEE")
+                {
+                    Console.WriteLine(distanceFromCurrentWaypointToDestination);
+                    Console.WriteLine(distanceFromTestWaypointToDestination);
+                    Console.WriteLine(distanceFromTestWaypointToDestination < distanceFromCurrentWaypointToDestination);
+                    Console.WriteLine(testWaypoint.ident);
+                }
+
                 if (distanceFromTestWaypointToDestination < distanceFromCurrentWaypointToDestination)
                 {
                     // then, does it have any non-explored airways that will lead us closer to the destination?
                     int nonExploredAirwaysCount = 0;
                     List<(WaypointRecord, AirwayRecord)> outgoingAirwaysFromTestWaypoint;
 
-                    if (NavdataInteractor.outgoingAirwaysByWaypointID.TryGetValue(currentWaypoint.WaypointID, out outgoingAirwaysFromTestWaypoint))
+                    if (NavdataInteractor.outgoingAirwaysByWaypointID.TryGetValue(testWaypoint.WaypointID, out outgoingAirwaysFromTestWaypoint))
                     {
+                        //Console.WriteLine("here");
                         foreach ((WaypointRecord, AirwayRecord) airwayTuple in outgoingAirwaysFromTestWaypoint)
                         {
 
@@ -77,6 +88,7 @@ namespace FlightRouteGenerator
                 {
                     shortestDistanceToCurrentWaypoint = distanceToCurrentWaypoint;
                     waypointToReturn = waypointCandidate;
+                    Console.WriteLine($"{waypointToReturn.ident}, {distanceToCurrentWaypoint}");
                 }
             }
 
