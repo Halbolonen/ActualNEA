@@ -7,8 +7,9 @@ namespace FlightRouteGenerator
         public static void Main()
         {
             NavdataInteractor.Initialise();
-            WaypointRecord test = (WaypointRecord)NavdataInteractor.waypointRecordDict["67"];
+            WaypointRecord test = (WaypointRecord)NavdataInteractor.waypointRecordDict["270091"];
             Console.WriteLine(test.ident);
+            
         }
     }
 }

@@ -64,7 +64,7 @@ namespace FlightRouteGenerator
             }
         }
 
-        public AStarNode ExploreOpenSet(AStarNode currentNode)
+        public AStarNode ExploreOpenSet(AStarNode currentNode, AirportRecord destination)
         {
             WaypointRecord newWaypoint = new WaypointRecord();
             AStarNode newNode = new AStarNode();
@@ -79,15 +79,39 @@ namespace FlightRouteGenerator
             {
                 // panic! there are no more options in the open set
                 // that get us closer to the destination. cheating time!
+                AStarNode prizeNode = new AStarNode();
+                prizeNode.hScore = double.MaxValue;
 
+                foreach (AStarNode node in closedSet.Values)
+                {
+                    if (node.hScore < prizeNode.hScore)
+                    {
+                        prizeNode = node;
+                    }
+                }
 
+                WaypointRecord bestUsefullyConnectedWaypoint = Navigator.GetBestUsefullyConnectedWaypoint(prizeNode.associatedWaypoint, destination,
+                    closedSet);
+
+                AStarNode bestUsefullyConnectedNode = new AStarNode();
+                bestUsefullyConnectedNode.gScore = prizeNode.gScore + Navigator.GetDistanceBetweenGeoCoordinates(
+                    prizeNode.associatedWaypoint.laty, prizeNode.associatedWaypoint.lonx,
+                    bestUsefullyConnectedWaypoint.laty, bestUsefullyConnectedWaypoint.lonx);
+                bestUsefullyConnectedNode.hScore = Navigator.GetDistanceBetweenGeoCoordinates(
+                    bestUsefullyConnectedWaypoint.laty, bestUsefullyConnectedWaypoint.lonx,
+                    destination.laty, destination.lonx);
+                bestUsefullyConnectedNode.parent = prizeNode;
+                bestUsefullyConnectedNode.associatedWaypoint = bestUsefullyConnectedWaypoint;
+                bestUsefullyConnectedNode.UpdateAStarScore();
+
+                ExpandOpenSet(bestUsefullyConnectedNode, destination);
+                newNode = openSet.Dequeue();
             }
 
             AStarNode parent = newNode.parent;
 
             newNode.gScore = parent.gScore + Navigator.GetDistanceBetweenGeoCoordinates(parent.associatedWaypoint.laty, parent.associatedWaypoint.lonx, 
                 newNode.associatedWaypoint.laty, newNode.associatedWaypoint.lonx);
-
 
             newNode.UpdateAStarScore();
 

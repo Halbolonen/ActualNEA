@@ -7,7 +7,7 @@ using System.Transactions;
 
 namespace FlightRouteGenerator
 {
-    public static class Navigator
+    internal static class Navigator
     {
         public static double GetDistanceBetweenGeoCoordinates(double orgLaty, double orgLonx, double dstLaty, double dstLonx)
         {
@@ -24,17 +24,68 @@ namespace FlightRouteGenerator
             return 2 * r * Math.Pow(Math.Sin(Math.Sqrt(h)), -1);
         }
 
-        public static WaypointRecord GetBestUsefullyConnectedWaypoint(WaypointRecord currentWaypoint)
+        public static WaypointRecord GetBestUsefullyConnectedWaypoint(WaypointRecord currentWaypoint, AirportRecord destination, 
+            Dictionary<string, AStarNode> closedSet)
         {
+            WaypointRecord waypointToReturn = new WaypointRecord();
+            bool waypointFound = false;
+            List<WaypointRecord> candidates = new List<WaypointRecord>();
+
             foreach (string waypointID in NavdataInteractor.outgoingAirwaysByWaypointID.Keys)
             {
-                WaypointRecord waypointRecord = (WaypointRecord)NavdataInteractor.waypointRecordDict[waypointID];
+                WaypointRecord testWaypoint = (WaypointRecord)NavdataInteractor.waypointRecordDict[waypointID];
                 // firstly, is it closer to the destination?
+                double distanceFromTestWaypointToDestination = Navigator.GetDistanceBetweenGeoCoordinates(
+                    testWaypoint.laty, testWaypoint.lonx, destination.laty, destination.lonx);
+                double distanceFromCurrentWaypointToDestination = Navigator.GetDistanceBetweenGeoCoordinates(
+                    currentWaypoint.laty, currentWaypoint.lonx, destination.laty, destination.lonx);
 
-                // then, does it have any non-explored airways that will lead us closer to the destination?
+                if (distanceFromTestWaypointToDestination < distanceFromCurrentWaypointToDestination)
+                {
+                    // then, does it have any non-explored airways that will lead us closer to the destination?
+                    int nonExploredAirwaysCount = 0;
+                    List<(WaypointRecord, AirwayRecord)> outgoingAirwaysFromTestWaypoint;
 
-                // if it does, store it, break the foreach and return it.
+                    if (NavdataInteractor.outgoingAirwaysByWaypointID.TryGetValue(currentWaypoint.WaypointID, out outgoingAirwaysFromTestWaypoint))
+                    {
+                        foreach ((WaypointRecord, AirwayRecord) airwayTuple in outgoingAirwaysFromTestWaypoint)
+                        {
+
+                            if (!closedSet.TryGetValue(airwayTuple.Item1.WaypointID, out AStarNode airwayDestinationNode))
+                            {
+                                nonExploredAirwaysCount++;
+                            }
+                        }
+                    }
+
+                    if (nonExploredAirwaysCount > 0)
+                    {
+                        // if it does, store it in a list.
+                        waypointFound = true;
+                        candidates.Add(testWaypoint);
+                    }
+                }
             }
+
+            double shortestDistanceToCurrentWaypoint = double.MaxValue;
+
+            foreach(WaypointRecord waypointCandidate in candidates)
+            {
+                double distanceToCurrentWaypoint = Navigator.GetDistanceBetweenGeoCoordinates(currentWaypoint.laty, currentWaypoint.lonx,
+                    waypointCandidate.laty, waypointCandidate.lonx);
+                if (distanceToCurrentWaypoint < shortestDistanceToCurrentWaypoint)
+                {
+                    shortestDistanceToCurrentWaypoint = distanceToCurrentWaypoint;
+                    waypointToReturn = waypointCandidate;
+                }
+            }
+
+            if (!waypointFound)
+            {
+                throw new Exception("couldn't find a backup!!! your code seriously sucks dude.");
+            }
+
+            return waypointToReturn;
         }
     }
 }
