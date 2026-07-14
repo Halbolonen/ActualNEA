@@ -42,6 +42,8 @@ namespace FlightRouteGenerator
                                 arrivalAirport.laty, arrivalAirport.lonx);
                             newNode.UpdateAStarScore();
                             newNode.associatedWaypoint = newWaypoint;
+                            newNode.isRoot = false;
+                            newNode.parent = currentBestNode;
 
                             openSet.Enqueue(newNode, newNode.aStarScore);
 
@@ -68,7 +70,7 @@ namespace FlightRouteGenerator
         {
             WaypointRecord newWaypoint = new WaypointRecord();
             AStarNode newNode = new AStarNode();
-            newNode = openSet.Dequeue();
+            newNode.hScore = double.MaxValue;
 
             while (openSet.Count > 0 && newNode.hScore > currentNode.hScore)
             {
@@ -81,13 +83,20 @@ namespace FlightRouteGenerator
                 // that get us closer to the destination. cheating time!
                 AStarNode prizeNode = new AStarNode();
                 prizeNode.hScore = double.MaxValue;
+                bool prizeNodeDefined = false;
 
                 foreach (AStarNode node in closedSet.Values)
                 {
                     if (node.hScore < prizeNode.hScore)
                     {
                         prizeNode = node;
+                        prizeNodeDefined = true;
                     }
+                }
+
+                if (!prizeNodeDefined)
+                {
+                    prizeNode = currentNode;
                 }
 
                 WaypointRecord bestUsefullyConnectedWaypoint = Navigator.GetBestUsefullyConnectedWaypoint(prizeNode.associatedWaypoint, destination,
@@ -103,8 +112,14 @@ namespace FlightRouteGenerator
                 bestUsefullyConnectedNode.parent = prizeNode;
                 bestUsefullyConnectedNode.associatedWaypoint = bestUsefullyConnectedWaypoint;
                 bestUsefullyConnectedNode.UpdateAStarScore();
-
                 ExpandOpenSet(bestUsefullyConnectedNode, destination);
+
+                if (openSet.Count == 0)
+                {
+                    // i'm panicking, no i am because i'm gonna lose me route
+
+                }
+
                 newNode = openSet.Dequeue();
             }
 
@@ -116,6 +131,34 @@ namespace FlightRouteGenerator
             newNode.UpdateAStarScore();
 
             return newNode;
+        }
+
+        public void ExpandGraphFromWaypointUntilDestinationReached(WaypointRecord originWaypoint, AirportRecord destinationAirport)
+        {
+            AStarNode originNode = new AStarNode();
+            originNode.associatedWaypoint = originWaypoint;
+            originNode.gScore = 0;
+            originNode.hScore = Navigator.GetDistanceBetweenGeoCoordinates(originWaypoint.laty, originWaypoint.lonx, destinationAirport.laty, destinationAirport.lonx);
+            originNode.UpdateAStarScore();
+            originNode.isRoot = true;
+            originNode.parent = originNode;
+
+            AStarNode currentNode = originNode;
+
+            while (currentNode.hScore > GLOBAL_SETTINGS.MAX_DIST_FROM_DEST)
+            {
+                ExpandOpenSet(currentNode, destinationAirport);
+                currentNode = ExploreOpenSet(currentNode, destinationAirport);
+                //Console.WriteLine(currentNode.associatedWaypoint.ident);
+            }
+        }
+
+        public AStarSearch()
+        {
+            openSet = new PriorityQueue<AStarNode, double>();
+            membersOfOpenSet = new Dictionary<string, AStarNode>();
+            closedSet = new Dictionary<string, AStarNode>();
+            totalDistance = 0;
         }
     }
 }

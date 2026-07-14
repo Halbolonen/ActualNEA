@@ -42,14 +42,6 @@ namespace FlightRouteGenerator
                 double distanceFromCurrentWaypointToDestination = Navigator.GetDistanceBetweenGeoCoordinates(
                     currentWaypoint.laty, currentWaypoint.lonx, destination.laty, destination.lonx);
 
-                if (distanceFromTestWaypointToDestination < distanceFromCurrentWaypointToDestination && testWaypoint.ident == "EZEEE")
-                {
-                    Console.WriteLine(distanceFromCurrentWaypointToDestination);
-                    Console.WriteLine(distanceFromTestWaypointToDestination);
-                    Console.WriteLine(distanceFromTestWaypointToDestination < distanceFromCurrentWaypointToDestination);
-                    Console.WriteLine(testWaypoint.ident);
-                }
-
                 if (distanceFromTestWaypointToDestination < distanceFromCurrentWaypointToDestination)
                 {
                     // then, does it have any non-explored airways that will lead us closer to the destination?
@@ -58,7 +50,6 @@ namespace FlightRouteGenerator
 
                     if (NavdataInteractor.outgoingAirwaysByWaypointID.TryGetValue(testWaypoint.WaypointID, out outgoingAirwaysFromTestWaypoint))
                     {
-                        //Console.WriteLine("here");
                         foreach ((WaypointRecord, AirwayRecord) airwayTuple in outgoingAirwaysFromTestWaypoint)
                         {
 
@@ -88,7 +79,6 @@ namespace FlightRouteGenerator
                 {
                     shortestDistanceToCurrentWaypoint = distanceToCurrentWaypoint;
                     waypointToReturn = waypointCandidate;
-                    Console.WriteLine($"{waypointToReturn.ident}, {distanceToCurrentWaypoint}");
                 }
             }
 

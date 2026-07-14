@@ -136,10 +136,6 @@ namespace FlightRouteGenerator
                         ((WaypointRecord)waypointRecordDict[airwayRecord.toWaypointID], airwayRecord)});
                 }
             }
-
-            Console.WriteLine(outgoingAirwaysByWaypointID.Count);
-            Console.WriteLine(waypointRecordDict.Count);
-            Console.WriteLine(airwayRecordDict.Count);
         }
 
         public static WaypointRecord FindWaypointByIdent(string inputIdent)
