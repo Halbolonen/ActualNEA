@@ -9,6 +9,7 @@ namespace FlightRouteGenerator
             Console.WriteLine("Initialising datasets, please wait...");
             NavdataInteractor.Initialise();
             Console.Clear();
+
             Console.Write("Welcome to the Flight Route Planner!\nEnter departure airport ICAO code: ");
             string departureInput = Console.ReadLine().ToUpper();
             Console.Write("Enter arrival airport ICAO code: ");
@@ -34,6 +35,23 @@ namespace FlightRouteGenerator
             }
 
             route.TotalDistance += Navigator.GetDistanceBetweenGeoCoordinates(departureAirport.laty, departureAirport.lonx, route.Legs[0].Waypoint.laty, route.Legs[0].Waypoint.lonx);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             Console.WriteLine("\nYour route:\n");
             Console.WriteLine($"DCT {route.DepartureAirport.ident}\n---------------");
