@@ -108,8 +108,6 @@ namespace FlightRouteGenerator
                 if (!prizeNodeDefined)
                 {
                     prizeNode = currentNode;
-                    Console.WriteLine(prizeNode.associatedWaypoint.ident);
-                    Console.WriteLine(prizeNode.associatedWaypoint.laty);
                 }
 
                 WaypointRecord bestUsefullyConnectedWaypoint = Navigator.GetBestUsefullyConnectedWaypoint(prizeNode.associatedWaypoint, destination,
