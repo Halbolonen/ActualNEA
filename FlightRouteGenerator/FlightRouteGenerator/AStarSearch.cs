@@ -174,8 +174,9 @@ namespace FlightRouteGenerator
             originNode.parent = originNode;
 
             AStarNode currentNode = originNode;
+            bool mustGoDirectToDestinationNow = false;
 
-            while (currentNode.hScore > GLOBAL_SETTINGS.MAX_DIST_FROM_DEST)
+            while (!mustGoDirectToDestinationNow)
             {
                 ExpandOpenSet(currentNode, destinationAirport);
                 try
@@ -184,7 +185,7 @@ namespace FlightRouteGenerator
                 }
                 catch (MustGoDirectToDestinationException)
                 {
-                    break;
+                    mustGoDirectToDestinationNow = true;
                 }
                 
             }
