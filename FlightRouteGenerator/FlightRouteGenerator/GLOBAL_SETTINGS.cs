@@ -11,7 +11,7 @@ namespace FlightRouteGenerator
     {
         public static string navDBFilePath =
             "Data Source=\"C:\\Users\\halbo\\AIRAC2602\\little_navmap_navigraph.sqlite\";";
-        public static double MAX_DIST_FROM_DEST = 20;
+        public static double MAX_DIST_FROM_DEST = 0;
         // maximum distance that the final waypoint can be away from the destination airport, in nmi.
     }
 }

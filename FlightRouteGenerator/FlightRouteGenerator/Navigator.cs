@@ -97,7 +97,7 @@ namespace FlightRouteGenerator
 
             if (!waypointFound)
             {
-                throw new Exception("couldn't find a backup!!! your code seriously sucks dude.");
+                throw new MustGoDirectToDestinationException();
             }
 
             return waypointToReturn;

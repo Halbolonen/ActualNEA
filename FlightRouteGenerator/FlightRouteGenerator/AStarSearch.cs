@@ -110,8 +110,17 @@ namespace FlightRouteGenerator
                     prizeNode = currentNode;
                 }
 
-                WaypointRecord bestUsefullyConnectedWaypoint = Navigator.GetBestUsefullyConnectedWaypoint(prizeNode.associatedWaypoint, destination,
+                WaypointRecord bestUsefullyConnectedWaypoint;
+
+                try
+                {
+                    bestUsefullyConnectedWaypoint = Navigator.GetBestUsefullyConnectedWaypoint(prizeNode.associatedWaypoint, destination,
                     closedSet);
+                }
+                catch (MustGoDirectToDestinationException)
+                {
+                    throw;
+                }
 
                 AStarNode bestUsefullyConnectedNode = new AStarNode();
 
@@ -169,8 +178,15 @@ namespace FlightRouteGenerator
             while (currentNode.hScore > GLOBAL_SETTINGS.MAX_DIST_FROM_DEST)
             {
                 ExpandOpenSet(currentNode, destinationAirport);
-                currentNode = ExploreOpenSet(currentNode, destinationAirport);
-                //Console.WriteLine(currentNode.associatedWaypoint.ident);
+                try
+                {
+                    currentNode = ExploreOpenSet(currentNode, destinationAirport);
+                }
+                catch (MustGoDirectToDestinationException)
+                {
+                    break;
+                }
+                
             }
             return currentNode;
         }
