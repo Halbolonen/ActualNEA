@@ -23,7 +23,7 @@ namespace FlightRouteGenerator
             route.ArrivalAirport = arrivalAirport;
 
             AStarSearch aStar = new AStarSearch();
-            WaypointRecord closestWaypointToDepartureAirport = Navigator.GetClosestWaypointToGeoCoordinates(departureAirport.laty, departureAirport.lonx);
+            WaypointRecord closestWaypointToDepartureAirport = Navigator.GetBestUsefullyConnectedWaypointByGeoCoords(departureAirport.laty, departureAirport.lonx, arrivalAirport, new Dictionary<string, AStarNode>());
 
             AStarNode destinationNode = aStar.ExpandGraphFromWaypointUntilDestinationReached(closestWaypointToDepartureAirport, arrivalAirport);
             route.Legs = aStar.GetRouteToDestinationFromExpandedGraph(destinationNode, departureAirport);

@@ -26,8 +26,7 @@ namespace FlightRouteGenerator
             return 2 * r * Math.Asin(Math.Sqrt(h));
         }
 
-        public static WaypointRecord GetBestUsefullyConnectedWaypoint(WaypointRecord currentWaypoint, AirportRecord destination, 
-            Dictionary<string, AStarNode> closedSet)
+        public static WaypointRecord GetBestUsefullyConnectedWaypointByGeoCoords(double laty, double lonx, AirportRecord destination, Dictionary<string, AStarNode> closedSet)
         {
             WaypointRecord waypointToReturn = new WaypointRecord();
             bool waypointFound = false;
@@ -45,7 +44,7 @@ namespace FlightRouteGenerator
                     double distanceFromTestWaypointToDestination = Navigator.GetDistanceBetweenGeoCoordinates(
                         testWaypoint.laty, testWaypoint.lonx, destination.laty, destination.lonx);
                     double distanceFromCurrentWaypointToDestination = Navigator.GetDistanceBetweenGeoCoordinates(
-                        currentWaypoint.laty, currentWaypoint.lonx, destination.laty, destination.lonx);
+                        laty, lonx, destination.laty, destination.lonx);
 
                     if (distanceFromTestWaypointToDestination < distanceFromCurrentWaypointToDestination)
                     {
@@ -63,7 +62,7 @@ namespace FlightRouteGenerator
                                     if (Navigator.GetDistanceBetweenGeoCoordinates(
                                         tupleWaypoint.laty, tupleWaypoint.lonx, destination.laty, destination.lonx)
                                         < Navigator.GetDistanceBetweenGeoCoordinates(
-                                            currentWaypoint.laty, currentWaypoint.lonx, destination.laty, destination.lonx))
+                                            laty, lonx, destination.laty, destination.lonx))
                                     {
                                         suitableNonExploredAirwaysCount++;
                                     }
@@ -79,14 +78,13 @@ namespace FlightRouteGenerator
                         }
                     }
                 }
-                
             }
 
             double shortestDistanceToCurrentWaypoint = double.MaxValue;
 
-            foreach(WaypointRecord waypointCandidate in candidates)
+            foreach (WaypointRecord waypointCandidate in candidates)
             {
-                double distanceToCurrentWaypoint = Navigator.GetDistanceBetweenGeoCoordinates(currentWaypoint.laty, currentWaypoint.lonx,
+                double distanceToCurrentWaypoint = Navigator.GetDistanceBetweenGeoCoordinates(laty, lonx,
                     waypointCandidate.laty, waypointCandidate.lonx);
                 if (distanceToCurrentWaypoint < shortestDistanceToCurrentWaypoint)
                 {
@@ -101,6 +99,12 @@ namespace FlightRouteGenerator
             }
 
             return waypointToReturn;
+        }
+
+        public static WaypointRecord GetBestUsefullyConnectedWaypoint(WaypointRecord currentWaypoint, AirportRecord destination,
+            Dictionary<string, AStarNode> closedSet)
+        { 
+            return GetBestUsefullyConnectedWaypointByGeoCoords(currentWaypoint.laty, currentWaypoint.lonx, destination, closedSet);
         }
 
         public static WaypointRecord GetClosestWaypointToGeoCoordinates(double currentLaty, double currentLonx)

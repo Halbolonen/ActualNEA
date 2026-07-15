@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FlightRouteGenerator
+﻿namespace FlightRouteGenerator
 {
     internal class AStarSearch
     {
@@ -25,8 +19,31 @@ namespace FlightRouteGenerator
                 {
                     AirwayRecord airwayRecord = airwayTuple.Item2;
                     WaypointRecord newWaypoint = airwayTuple.Item1;
-                    // if the airwayRecord does not go to a point that we've already visited,
-                    if (!closedSet.ContainsKey(airwayRecord.toWaypointID))
+
+                    AStarNode newTemporaryNode = new AStarNode();
+
+                    newTemporaryNode.gScore = currentBestNode.gScore + airwayRecord.length;
+                    newTemporaryNode.hScore = Navigator.GetDistanceBetweenGeoCoordinates(newWaypoint.laty, newWaypoint.lonx, arrivalAirport.laty, arrivalAirport.lonx);
+                    newTemporaryNode.UpdateAStarScore();
+
+
+                    if (membersOfOpenSet.TryGetValue(newWaypoint.WaypointID, out AStarNode existingNode))
+                    {
+                        if (existingNode.aStarScore > newTemporaryNode.aStarScore)
+                        {
+                            existingNode.gScore = newTemporaryNode.gScore;
+                            existingNode.hScore = newTemporaryNode.hScore;
+
+                            existingNode.UpdateAStarScore();
+                        }
+                    }
+
+                    if (closedSet.TryGetValue(newWaypoint.WaypointID, out AStarNode closedNode))
+                    {
+                        //transfer to open set if new temporary node generated from new waypoint has a better ass than the closedNode.
+                    }
+
+                    /*if (!closedSet.ContainsKey(airwayRecord.toWaypointID))
                     {
                         airwayFound = true;
                         AStarNode newNode = new AStarNode();
@@ -72,93 +89,39 @@ namespace FlightRouteGenerator
                         {
                             AddToOpenSet();
                         }
-                    }
+                    }*/
+
+
                 }
             }
         }
 
         public AStarNode ExploreOpenSet(AStarNode currentNode, AirportRecord destination)
         {
-            WaypointRecord newWaypoint = new WaypointRecord();
             AStarNode newNode = new AStarNode();
             newNode.hScore = double.MaxValue;
+            bool newNodeIsMemberOfOpenSet = false;
 
-            while (openSet.Count > 0 && newNode.hScore > currentNode.hScore)
+            while (openSet.Count > 0 && !newNodeIsMemberOfOpenSet)
             {
                 newNode = openSet.Dequeue();
+                Console.WriteLine(newNode.associatedWaypoint.ident);
+
+                if (membersOfOpenSet.TryGetValue(newNode.associatedWaypoint.WaypointID, out AStarNode confirmedOpenSetMember) && ReferenceEquals(newNode, confirmedOpenSetMember))
+                {
+                    newNodeIsMemberOfOpenSet = true;
+                }
             }
 
-            if (openSet.Count == 0 && newNode.hScore > currentNode.hScore)
+            if (newNodeIsMemberOfOpenSet)
             {
-                // panic! there are no more options in the open set
-                // that get us closer to the destination. cheating time!
-                AStarNode prizeNode = new AStarNode();
-                prizeNode.hScore = double.MaxValue;
-                bool prizeNodeDefined = false;
-
-                foreach (AStarNode node in closedSet.Values)
-                {
-                    if (node.hScore < prizeNode.hScore)
-                    {
-                        prizeNode = node;
-                        prizeNodeDefined = true;
-                    }
-                }
-
-                if (!prizeNodeDefined)
-                {
-                    prizeNode = currentNode;
-                }
-
-                WaypointRecord bestUsefullyConnectedWaypoint;
-
-                try
-                {
-                    bestUsefullyConnectedWaypoint = Navigator.GetBestUsefullyConnectedWaypoint(prizeNode.associatedWaypoint, destination,
-                    closedSet);
-                }
-                catch (MustGoDirectToDestinationException)
-                {
-                    throw;
-                }
-
-                AStarNode bestUsefullyConnectedNode = new AStarNode();
-
-                bestUsefullyConnectedNode.gScore = prizeNode.gScore + Navigator.GetDistanceBetweenGeoCoordinates(
-                    prizeNode.associatedWaypoint.laty, prizeNode.associatedWaypoint.lonx,
-                    bestUsefullyConnectedWaypoint.laty, bestUsefullyConnectedWaypoint.lonx);
-
-                bestUsefullyConnectedNode.hScore = Navigator.GetDistanceBetweenGeoCoordinates(
-                    bestUsefullyConnectedWaypoint.laty, bestUsefullyConnectedWaypoint.lonx,
-                    destination.laty, destination.lonx);
-
-                bestUsefullyConnectedNode.parent = prizeNode;
-                bestUsefullyConnectedNode.associatedWaypoint = bestUsefullyConnectedWaypoint;
-                bestUsefullyConnectedNode.UpdateAStarScore();
-                bestUsefullyConnectedNode.isProductOfRouteDiscontinuity = true;
-
-                AirwayRecord direct = new AirwayRecord();
-                direct.length = Navigator.GetDistanceBetweenGeoCoordinates(prizeNode.associatedWaypoint.laty, prizeNode.associatedWaypoint.lonx, bestUsefullyConnectedWaypoint.laty, bestUsefullyConnectedWaypoint.lonx);
-                direct.isDirect = true;
-                bestUsefullyConnectedNode.ParentAirway = direct;
-
-                ExpandOpenSet(bestUsefullyConnectedNode, destination);
-
-                if (openSet.Count == 0)
-                {
-                    //
-                    throw new Exception($"i'm panicking, no i am because i'm gonna lose me route\n{bestUsefullyConnectedWaypoint.ident}");
-                }
-
-                newNode = openSet.Dequeue();
+                membersOfOpenSet.Remove(newNode.associatedWaypoint.WaypointID);
+                closedSet.Add(newNode.associatedWaypoint.WaypointID, newNode);
             }
-
-            AStarNode parent = newNode.parent;
-
-            newNode.gScore = parent.gScore + Navigator.GetDistanceBetweenGeoCoordinates(parent.associatedWaypoint.laty, parent.associatedWaypoint.lonx, 
-                newNode.associatedWaypoint.laty, newNode.associatedWaypoint.lonx);
-
-            newNode.UpdateAStarScore();
+            else
+            {
+                throw new Exception("no possible routes");
+            }
 
             return newNode;
         }
@@ -187,7 +150,7 @@ namespace FlightRouteGenerator
                 {
                     mustGoDirectToDestinationNow = true;
                 }
-                
+
             }
             return currentNode;
         }
@@ -211,7 +174,7 @@ namespace FlightRouteGenerator
                 leg.Airway = currentNode.ParentAirway;
 
                 route.Add(leg);
-                 currentNode = currentNode.parent;
+                currentNode = currentNode.parent;
             }
 
             RouteLeg finalStep = new RouteLeg();
