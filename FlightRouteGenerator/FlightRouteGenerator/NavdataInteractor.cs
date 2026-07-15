@@ -44,25 +44,29 @@ namespace FlightRouteGenerator
 
             SQLiteDataReader dataReader;
             SQLiteCommand commandObject = new SQLiteCommand(command, navDBConnection);
+            int waypointCommandArincTypeColumnIndex = 4;
 
             dataReader = commandObject.ExecuteReader();
 
             while (dataReader.Read())
             {
+
                 switch (typeOfRecord)
                 {
                     case "waypoint":
                         WaypointRecord wpRecord = new WaypointRecord();
 
+
+                        if (dataReader.IsDBNull(waypointCommandArincTypeColumnIndex))
+                        {
+                            break;
+                        }
+
                         wpRecord.WaypointID = Convert.ToString(dataReader["waypoint_id"]);
                         wpRecord.ident = (string)dataReader["ident"];
                         wpRecord.laty = Convert.ToDouble(dataReader["laty"]);
                         wpRecord.lonx = Convert.ToDouble(dataReader["lonx"]);
-                        try
-                        {
-                            wpRecord.arincType = (string)dataReader["arinc_type"];
-                        }
-                        catch (InvalidCastException) { }
+                        wpRecord.arincType = (string)dataReader["arinc_type"];
 
                         if (wpRecord.arincType != "V")
                         {
@@ -130,18 +134,26 @@ namespace FlightRouteGenerator
             airwayRecordDict = LoadAirwayRecords();
 
             outgoingAirwaysByWaypointID = new Dictionary<string, List<(WaypointRecord, AirwayRecord)>>();
+            Record toWaypoint = new Record();
+
             foreach (AirwayRecord airwayRecord in airwayRecordDict.Values)
             {
-                if (outgoingAirwaysByWaypointID.TryGetValue(airwayRecord.fromWaypointID, out List<(WaypointRecord, AirwayRecord)> connections))
+                if (waypointRecordDict.TryGetValue(airwayRecord.toWaypointID, out toWaypoint))
                 {
-                    outgoingAirwaysByWaypointID[airwayRecord.fromWaypointID].Add(
-                        ((WaypointRecord)waypointRecordDict[airwayRecord.toWaypointID],
-                        airwayRecord));
-                }
-                else
-                {
-                    outgoingAirwaysByWaypointID.Add(airwayRecord.fromWaypointID, new List<(WaypointRecord, AirwayRecord)> {
-                        ((WaypointRecord)waypointRecordDict[airwayRecord.toWaypointID], airwayRecord)});
+                    if (outgoingAirwaysByWaypointID.TryGetValue(airwayRecord.fromWaypointID, out List<(WaypointRecord, AirwayRecord)> connections))
+                    {
+                        outgoingAirwaysByWaypointID[airwayRecord.fromWaypointID].Add(
+                            ((WaypointRecord)waypointRecordDict[airwayRecord.toWaypointID],
+                            airwayRecord));
+                    }
+                    else
+                    {
+                        if (waypointRecordDict.TryGetValue(airwayRecord.toWaypointID, out toWaypoint))
+                        {
+                            outgoingAirwaysByWaypointID.Add(airwayRecord.fromWaypointID, new List<(WaypointRecord, AirwayRecord)> {
+                        ((WaypointRecord)toWaypoint, airwayRecord)});
+                        }
+                    }
                 }
             }
         }

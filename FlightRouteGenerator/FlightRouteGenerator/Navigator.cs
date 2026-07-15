@@ -35,44 +35,51 @@ namespace FlightRouteGenerator
 
             foreach (string waypointID in NavdataInteractor.outgoingAirwaysByWaypointID.Keys)
             {
-                WaypointRecord testWaypoint = (WaypointRecord)NavdataInteractor.waypointRecordDict[waypointID];
-                // firstly, is it closer to the destination?
-                double distanceFromTestWaypointToDestination = Navigator.GetDistanceBetweenGeoCoordinates(
-                    testWaypoint.laty, testWaypoint.lonx, destination.laty, destination.lonx);
-                double distanceFromCurrentWaypointToDestination = Navigator.GetDistanceBetweenGeoCoordinates(
-                    currentWaypoint.laty, currentWaypoint.lonx, destination.laty, destination.lonx);
+                WaypointRecord testWaypoint = new WaypointRecord();
+                Record wpRecordDictOut = new Record();
 
-                if (distanceFromTestWaypointToDestination < distanceFromCurrentWaypointToDestination)
+                if (NavdataInteractor.waypointRecordDict.TryGetValue(waypointID, out wpRecordDictOut))
                 {
-                    // then, does it have any non-explored airways that will lead us closer to the destination?
-                    int suitableNonExploredAirwaysCount = 0;
-                    List<(WaypointRecord, AirwayRecord)> outgoingAirwaysFromTestWaypoint;
+                    testWaypoint = (WaypointRecord)wpRecordDictOut;
+                    // firstly, is it closer to the destination?
+                    double distanceFromTestWaypointToDestination = Navigator.GetDistanceBetweenGeoCoordinates(
+                        testWaypoint.laty, testWaypoint.lonx, destination.laty, destination.lonx);
+                    double distanceFromCurrentWaypointToDestination = Navigator.GetDistanceBetweenGeoCoordinates(
+                        currentWaypoint.laty, currentWaypoint.lonx, destination.laty, destination.lonx);
 
-                    if (NavdataInteractor.outgoingAirwaysByWaypointID.TryGetValue(testWaypoint.WaypointID, out outgoingAirwaysFromTestWaypoint))
+                    if (distanceFromTestWaypointToDestination < distanceFromCurrentWaypointToDestination)
                     {
-                        foreach ((WaypointRecord, AirwayRecord) airwayTuple in outgoingAirwaysFromTestWaypoint)
+                        // then, does it have any non-explored airways that will lead us closer to the destination?
+                        int suitableNonExploredAirwaysCount = 0;
+                        List<(WaypointRecord, AirwayRecord)> outgoingAirwaysFromTestWaypoint;
+
+                        if (NavdataInteractor.outgoingAirwaysByWaypointID.TryGetValue(testWaypoint.WaypointID, out outgoingAirwaysFromTestWaypoint))
                         {
-                            WaypointRecord tupleWaypoint = airwayTuple.Item1;
-                            if (!closedSet.TryGetValue(tupleWaypoint.WaypointID, out AStarNode airwayDestinationNode))
+                            foreach ((WaypointRecord, AirwayRecord) airwayTuple in outgoingAirwaysFromTestWaypoint)
                             {
-                                if (Navigator.GetDistanceBetweenGeoCoordinates(
-                                    tupleWaypoint.laty, tupleWaypoint.lonx, destination.laty, destination.lonx)
-                                    < Navigator.GetDistanceBetweenGeoCoordinates(
-                                        currentWaypoint.laty, currentWaypoint.lonx, destination.laty, destination.lonx))
+                                WaypointRecord tupleWaypoint = airwayTuple.Item1;
+                                if (!closedSet.TryGetValue(tupleWaypoint.WaypointID, out AStarNode airwayDestinationNode))
                                 {
-                                    suitableNonExploredAirwaysCount++;
+                                    if (Navigator.GetDistanceBetweenGeoCoordinates(
+                                        tupleWaypoint.laty, tupleWaypoint.lonx, destination.laty, destination.lonx)
+                                        < Navigator.GetDistanceBetweenGeoCoordinates(
+                                            currentWaypoint.laty, currentWaypoint.lonx, destination.laty, destination.lonx))
+                                    {
+                                        suitableNonExploredAirwaysCount++;
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    if (suitableNonExploredAirwaysCount > 0)
-                    {
-                        // if it does, store it in a list.
-                        waypointFound = true;
-                        candidates.Add(testWaypoint);
+                        if (suitableNonExploredAirwaysCount > 0)
+                        {
+                            // if it does, store it in a list.
+                            waypointFound = true;
+                            candidates.Add(testWaypoint);
+                        }
                     }
                 }
+                
             }
 
             double shortestDistanceToCurrentWaypoint = double.MaxValue;
