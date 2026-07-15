@@ -45,22 +45,28 @@ namespace FlightRouteGenerator
                 if (distanceFromTestWaypointToDestination < distanceFromCurrentWaypointToDestination)
                 {
                     // then, does it have any non-explored airways that will lead us closer to the destination?
-                    int nonExploredAirwaysCount = 0;
+                    int suitableNonExploredAirwaysCount = 0;
                     List<(WaypointRecord, AirwayRecord)> outgoingAirwaysFromTestWaypoint;
 
                     if (NavdataInteractor.outgoingAirwaysByWaypointID.TryGetValue(testWaypoint.WaypointID, out outgoingAirwaysFromTestWaypoint))
                     {
                         foreach ((WaypointRecord, AirwayRecord) airwayTuple in outgoingAirwaysFromTestWaypoint)
                         {
-
-                            if (!closedSet.TryGetValue(airwayTuple.Item1.WaypointID, out AStarNode airwayDestinationNode))
+                            WaypointRecord tupleWaypoint = airwayTuple.Item1;
+                            if (!closedSet.TryGetValue(tupleWaypoint.WaypointID, out AStarNode airwayDestinationNode))
                             {
-                                nonExploredAirwaysCount++;
+                                if (Navigator.GetDistanceBetweenGeoCoordinates(
+                                    tupleWaypoint.laty, tupleWaypoint.lonx, destination.laty, destination.lonx)
+                                    < Navigator.GetDistanceBetweenGeoCoordinates(
+                                        currentWaypoint.laty, currentWaypoint.lonx, destination.laty, destination.lonx))
+                                {
+                                    suitableNonExploredAirwaysCount++;
+                                }
                             }
                         }
                     }
 
-                    if (nonExploredAirwaysCount > 0)
+                    if (suitableNonExploredAirwaysCount > 0)
                     {
                         // if it does, store it in a list.
                         waypointFound = true;

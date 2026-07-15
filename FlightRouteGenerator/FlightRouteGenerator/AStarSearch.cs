@@ -116,8 +116,8 @@ namespace FlightRouteGenerator
 
                 if (openSet.Count == 0)
                 {
-                    // i'm panicking, no i am because i'm gonna lose me route
-
+                    // 
+                    throw new Exception($"i'm panicking, no i am because i'm gonna lose me route\n{bestUsefullyConnectedWaypoint.ident}");
                 }
 
                 newNode = openSet.Dequeue();
@@ -151,6 +151,7 @@ namespace FlightRouteGenerator
                 currentNode = ExploreOpenSet(currentNode, destinationAirport);
                 //Console.WriteLine(currentNode.associatedWaypoint.ident);
             }
+            Console.WriteLine(currentNode.associatedWaypoint.ident);
         }
 
         public AStarSearch()

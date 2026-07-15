@@ -8,7 +8,7 @@ namespace FlightRouteGenerator
         {
             NavdataInteractor.Initialise();
             WaypointRecord test = (WaypointRecord)NavdataInteractor.waypointRecordDict["270091"];
-            AirportRecord destTest = (AirportRecord)NavdataInteractor.airportRecordDict["9913"];
+            AirportRecord destTest = (AirportRecord)NavdataInteractor.airportRecordDict[/*"9913"*/"16278"];
 
             AStarSearch aStar = new AStarSearch();
             aStar.ExpandGraphFromWaypointUntilDestinationReached(test, destTest);
