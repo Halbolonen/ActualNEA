@@ -12,7 +12,7 @@ namespace FlightRouteGenerator
         public static double GetDistanceBetweenGeoCoordinates(double orgLaty, double orgLonx, double dstLaty, double dstLonx)
         {
             const double DEG_TO_RAD = Math.PI / 180;
-            const int r = 3444;
+            const int r = 3440;
             // earth radius in nmi
 
             double phi1 = orgLaty * DEG_TO_RAD;
@@ -94,6 +94,25 @@ namespace FlightRouteGenerator
             }
 
             return waypointToReturn;
+        }
+
+        public static WaypointRecord GetClosestWaypointToGeoCoordinates(double currentLaty, double currentLonx)
+        {
+            WaypointRecord closestWaypoint = new WaypointRecord();
+            double shortestDistance = double.MaxValue;
+
+            foreach (WaypointRecord waypoint in NavdataInteractor.waypointRecordDict.Values)
+            {
+                double distance = Navigator.GetDistanceBetweenGeoCoordinates(currentLaty, currentLonx, waypoint.laty, waypoint.lonx);
+
+                if (distance < shortestDistance)
+                {
+                    shortestDistance = distance;
+                    closestWaypoint = waypoint;
+                }
+            }
+
+            return closestWaypoint;
         }
     }
 }

@@ -30,5 +30,11 @@ namespace FlightRouteGenerator
         public double toLonx { get; set; }
         public double length { get; set; }
         public double aStarScore { get; set; }
+        public bool isDirect { get; set; }
+
+        public AirwayRecord()
+        {
+            isDirect = false;
+        }
     }
 }

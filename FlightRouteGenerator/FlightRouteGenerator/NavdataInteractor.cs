@@ -25,7 +25,7 @@ namespace FlightRouteGenerator
             {
                 case "waypoint":
                     command =
-                @"SELECT waypoint_id, ident, lonx, laty
+                @"SELECT waypoint_id, ident, lonx, laty, arinc_type
                 FROM waypoint";
                     break;
                 case "airport":
@@ -58,8 +58,16 @@ namespace FlightRouteGenerator
                         wpRecord.ident = (string)dataReader["ident"];
                         wpRecord.laty = Convert.ToDouble(dataReader["laty"]);
                         wpRecord.lonx = Convert.ToDouble(dataReader["lonx"]);
+                        try
+                        {
+                            wpRecord.arincType = (string)dataReader["arinc_type"];
+                        }
+                        catch (InvalidCastException) { }
 
-                        recordDict.Add(wpRecord.WaypointID, wpRecord);
+                        if (wpRecord.arincType != "V")
+                        {
+                            recordDict.Add(wpRecord.WaypointID, wpRecord);
+                        }
                         break;
                     case "airport":
                         AirportRecord apRecord = new AirportRecord();

@@ -14,6 +14,8 @@ namespace FlightRouteGenerator
         public double hScore { get; set; }
         public AStarNode parent { get; set; }
         public bool isRoot { get; set; }
+        public AirwayRecord ParentAirway { get; set; }
+        public bool isProductOfRouteDiscontinuity { get; set; }
 
         public void UpdateAStarScore()
         {
@@ -23,6 +25,7 @@ namespace FlightRouteGenerator
         public AStarNode()
         {
             isRoot = false;
+            isProductOfRouteDiscontinuity = false;
         }
     }
 }
