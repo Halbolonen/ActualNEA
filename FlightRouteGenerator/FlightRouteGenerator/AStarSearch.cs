@@ -2,11 +2,19 @@
 {
     internal class AStarSearch
     {
+        private static int MAX_NON_IMPROVED_H_SCORE_ITERATIONS = 50;
+        // maximum number of A* explorations that can occur where the hScore becomes worse before
+        // a route discontinuity is declared.
+
+        private static int DIRECT_DISTANCE_DISCONTINUITY_CHECK_MULTIPLIER = 2;
+        private AStarNode bestHScoreNode { get; set; }
+        private int nonImprovedHScoreIterations = 0;
+        private double routeGreatCircleDistance { get; set; }
+
         public PriorityQueue<AStarNode, double> openSet { get; set; }
         public Dictionary<string, AStarNode> membersOfOpenSet { get; set; }
         public Dictionary<string, AStarNode> closedSet { get; set; }
         private static AStarNode previousNode { get; set; }
-        public double totalDistance { get; private set; }
         public void ExpandOpenSet(AStarNode currentBestNode, AirportRecord arrivalAirport)
         {
             WaypointRecord currentBestWaypoint = currentBestNode.associatedWaypoint;
@@ -104,10 +112,28 @@
             }
             else
             {
-                throw new MustGoDirectToDestinationException();
+                throw new OpenSetEmptyException();
             }
 
             Console.WriteLine($"{newNode.associatedWaypoint.ident}: f: {newNode.aStarScore:F2} g: {newNode.gScore:F2} h: {newNode.hScore:F2}");
+
+            if (newNode.hScore > bestHScoreNode.hScore)
+            {
+                if (++nonImprovedHScoreIterations == MAX_NON_IMPROVED_H_SCORE_ITERATIONS)
+                {
+                    throw new RouteDiscontinuityException();
+                }
+            }
+            else
+            {
+                bestHScoreNode = newNode;
+                nonImprovedHScoreIterations = 0;
+            }
+
+            if (newNode.gScore > routeGreatCircleDistance * DIRECT_DISTANCE_DISCONTINUITY_CHECK_MULTIPLIER)
+            {
+                throw new RouteDiscontinuityException();
+            }
 
             return newNode;
         }
@@ -122,19 +148,21 @@
             originNode.isRoot = true;
             originNode.parent = originNode;
 
-            AStarNode currentNode = originNode;
-            bool mustGoDirectToDestinationNow = false;
+            routeGreatCircleDistance = Navigator.GetDistanceBetweenGeoCoordinates(originWaypoint.laty, originWaypoint.lonx, destinationAirport.laty, destinationAirport.lonx);
 
-            while (!mustGoDirectToDestinationNow)
+            AStarNode currentNode = originNode;
+            bool emptyOpenSet = false;
+
+            while (!emptyOpenSet)
             {
                 ExpandOpenSet(currentNode, destinationAirport);
                 try
                 {
                     currentNode = ExploreOpenSet(currentNode, destinationAirport);
                 }
-                catch (MustGoDirectToDestinationException)
+                catch (OpenSetEmptyException)
                 {
-                    mustGoDirectToDestinationNow = true;
+                    emptyOpenSet = true;
                 }
 
             }
@@ -184,7 +212,8 @@
             openSet = new PriorityQueue<AStarNode, double>();
             membersOfOpenSet = new Dictionary<string, AStarNode>();
             closedSet = new Dictionary<string, AStarNode>();
-            totalDistance = 0;
+            bestHScoreNode = new AStarNode();
+            bestHScoreNode.hScore = double.MaxValue;
         }
     }
 }

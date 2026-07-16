@@ -95,7 +95,7 @@ namespace FlightRouteGenerator
 
             if (!waypointFound)
             {
-                throw new MustGoDirectToDestinationException();
+                throw new OpenSetEmptyException();
             }
 
             return waypointToReturn;
