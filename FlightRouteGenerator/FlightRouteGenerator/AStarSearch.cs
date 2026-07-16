@@ -303,6 +303,8 @@ namespace FlightRouteGenerator
                 }
             }
 
+            route.enrouteWaypointCount = route.Legs.Count - 1;
+
             return route;
         }
 
