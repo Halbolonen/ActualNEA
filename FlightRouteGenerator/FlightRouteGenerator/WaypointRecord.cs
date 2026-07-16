@@ -11,8 +11,8 @@ namespace FlightRouteGenerator
         public string ident { get; set; }
         public double lonx { get; set; }
         public double laty { get; set; }
-        public string arincType { get; set; }
         private string waypointID;
+        public int Type { get; set; }
         public string WaypointID {
             get
             {

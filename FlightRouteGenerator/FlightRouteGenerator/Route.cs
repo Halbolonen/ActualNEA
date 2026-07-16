@@ -12,5 +12,11 @@ namespace FlightRouteGenerator
         public AirportRecord DepartureAirport { get; set; }
         public AirportRecord ArrivalAirport { get; set; }
         public double TotalDistance { get; set; }
+        public int enrouteWaypointCount { get; set; }
+
+        public Route()
+        {
+            enrouteWaypointCount = 0;
+        }
     }
 }

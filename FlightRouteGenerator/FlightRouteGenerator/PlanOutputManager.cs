@@ -32,5 +32,33 @@ namespace FlightRouteGenerator
 
             Console.WriteLine($"\n\nTotal distance: {route.TotalDistance:F1} nmi");
         }
+
+        public static void OutputRouteToFMSFile(Route route)
+        {
+            const string DIRECT = "DRCT";
+            string wptAlt = "WPT_ALT_HERE";
+            string fileContents = $"I\n1100 Version\nCYCLE {GLOBAL_SETTINGS.AIRAC_CYCLE}\nADEP " +
+                $"{route.DepartureAirport.ident}\nADES {route.ArrivalAirport.ident}\nNUMENR {route.enrouteWaypointCount}\n" +
+                $"{(int)WaypointType.Airport} {route.DepartureAirport.ident} " +
+                $"ADEP {wptAlt} {route.DepartureAirport.laty:F6} {route.DepartureAirport.lonx:F6}\n";
+
+            for (int i = 0; i < route.Legs.Count; i++)
+            {
+                RouteLeg leg = route.Legs[i];
+
+                if (i < route.Legs.Count - 1)
+                {
+                    fileContents += $"{leg.Waypoint.Type} {leg.Waypoint.ident} {leg.Airway.airwayName} {wptAlt} " +
+$"{leg.Waypoint.laty} {leg.Waypoint.lonx}\n";
+                }
+                else
+                {
+                    fileContents += $"{(int)WaypointType.Airport} {leg.Waypoint.ident} ADES {wptAlt} " +
+                        $"{route.ArrivalAirport.laty:F6} {route.ArrivalAirport.lonx:F6}";
+                }
+            }
+
+            Console.WriteLine(fileContents);
+        }
     }
 }

@@ -22,6 +22,7 @@ namespace FlightRouteGenerator
             Route route = aStar.GetRouteBetweenAirports(departureAirport, arrivalAirport);
 
             PlanOutputManager.OutputRouteToConsole(route);
+            PlanOutputManager.OutputRouteToFMSFile(route);
         }
     }
 }

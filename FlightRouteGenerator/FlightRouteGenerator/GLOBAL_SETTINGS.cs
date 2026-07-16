@@ -12,5 +12,7 @@ namespace FlightRouteGenerator
         public static string navDBFilePath =
             "Data Source=\"C:\\Users\\halbo\\AIRAC2602\\little_navmap_navigraph.sqlite\";";
         public static string DIRECT_FORMAT = "DCT";
+        public static string FMS_DIRECT_FORMAT = "DRCT";
+        public static string AIRAC_CYCLE = "2602";
     }
 }

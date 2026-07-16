@@ -43,6 +43,7 @@ namespace FlightRouteGenerator
 
             direct.length = Navigator.GetDistanceBetweenGeoCoordinates(fromLaty, fromLonx, toLaty, toLonx);
             direct.isDirect = true;
+            direct.airwayName = GLOBAL_SETTINGS.FMS_DIRECT_FORMAT;
 
             return direct;
         }
