@@ -36,5 +36,15 @@ namespace FlightRouteGenerator
         {
             isDirect = false;
         }
+
+        public static AirwayRecord CreateDirectBetweenGeoCoordinates(double fromLaty, double fromLonx, double toLaty, double toLonx)
+        {
+            AirwayRecord direct = new AirwayRecord();
+
+            direct.length = Navigator.GetDistanceBetweenGeoCoordinates(fromLaty, fromLonx, toLaty, toLonx);
+            direct.isDirect = true;
+
+            return direct;
+        }
     }
 }

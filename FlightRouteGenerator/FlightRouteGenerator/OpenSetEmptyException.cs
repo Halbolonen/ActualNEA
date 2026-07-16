@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FlightRouteGenerator
 {
-    internal class MustGoDirectToDestinationException : Exception
+    internal class OpenSetEmptyException : Exception
     {
     }
 }
