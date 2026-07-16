@@ -10,6 +10,9 @@ namespace FlightRouteGenerator
             NavdataInteractor.Initialise();
             Console.Clear();
 
+            //Console.WriteLine(NavdataInteractor.outgoingAirwaysByWaypointID["68879"][0].Item1.ident);
+            var x = (WaypointRecord)NavdataInteractor.waypointRecordDict["250199"];
+            Console.WriteLine(x.ident);
             Console.Write("Welcome to the Flight Route Planner!\nEnter departure airport ICAO code: ");
             string departureInput = Console.ReadLine().ToUpper();
             Console.Write("Enter arrival airport ICAO code: ");
@@ -25,8 +28,17 @@ namespace FlightRouteGenerator
 
             AStarSearch aStar = new AStarSearch();
             WaypointRecord closestWaypointToDepartureAirport = Navigator.GetBestUsefullyConnectedWaypointByGeoCoords(departureAirport.laty, departureAirport.lonx, arrivalAirport, new Dictionary<string, AStarNode>());
+            AStarNode originNode = new AStarNode();
+            originNode.associatedWaypoint = closestWaypointToDepartureAirport;
+            originNode.isRoot = true;
+            originNode.gScore = 0;
+            originNode.hScore = Navigator.GetDistanceBetweenGeoCoordinates(closestWaypointToDepartureAirport.laty, closestWaypointToDepartureAirport.lonx, arrivalAirport.laty, arrivalAirport.lonx);
+            originNode.UpdateAStarScore();
 
-            AStarNode destinationNode = aStar.ExpandGraphFromWaypointUntilDestinationReached(closestWaypointToDepartureAirport, arrivalAirport);
+            
+
+
+            AStarNode destinationNode = aStar.ExpandGraphFromNodeUntilDestinationReached(originNode, arrivalAirport);
             route.Legs = aStar.GetRouteToDestinationFromExpandedGraph(destinationNode, departureAirport);
 
             foreach (RouteLeg leg in route.Legs)
@@ -35,7 +47,7 @@ namespace FlightRouteGenerator
             }
 
             route.TotalDistance += Navigator.GetDistanceBetweenGeoCoordinates(departureAirport.laty, departureAirport.lonx, route.Legs[0].Waypoint.laty, route.Legs[0].Waypoint.lonx);
-
+            
 
 
 

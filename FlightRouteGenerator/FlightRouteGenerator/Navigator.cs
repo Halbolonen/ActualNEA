@@ -62,7 +62,9 @@ namespace FlightRouteGenerator
                                     if (Navigator.GetDistanceBetweenGeoCoordinates(
                                         tupleWaypoint.laty, tupleWaypoint.lonx, destination.laty, destination.lonx)
                                         < Navigator.GetDistanceBetweenGeoCoordinates(
-                                            laty, lonx, destination.laty, destination.lonx))
+                                            laty, lonx, destination.laty, destination.lonx)
+                                        && !closedSet.ContainsKey(tupleWaypoint.WaypointID)
+                                        )
                                     {
                                         suitableNonExploredAirwaysCount++;
                                     }
@@ -103,8 +105,18 @@ namespace FlightRouteGenerator
 
         public static WaypointRecord GetBestUsefullyConnectedWaypoint(WaypointRecord currentWaypoint, AirportRecord destination,
             Dictionary<string, AStarNode> closedSet)
-        { 
-            return GetBestUsefullyConnectedWaypointByGeoCoords(currentWaypoint.laty, currentWaypoint.lonx, destination, closedSet);
+        {
+            WaypointRecord bestUsefullyConnectedWaypoint;
+            try
+            {
+                bestUsefullyConnectedWaypoint = GetBestUsefullyConnectedWaypointByGeoCoords(currentWaypoint.laty, currentWaypoint.lonx, destination, closedSet);
+            }
+            catch (OpenSetEmptyException)
+            {
+                throw;
+            }
+
+            return bestUsefullyConnectedWaypoint;
         }
 
         public static WaypointRecord GetClosestWaypointToGeoCoordinates(double currentLaty, double currentLonx)

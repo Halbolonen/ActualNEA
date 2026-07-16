@@ -1,4 +1,6 @@
-﻿namespace FlightRouteGenerator
+﻿using System.Xml;
+
+namespace FlightRouteGenerator
 {
     internal class AStarSearch
     {
@@ -14,7 +16,6 @@
         public PriorityQueue<AStarNode, double> openSet { get; set; }
         public Dictionary<string, AStarNode> membersOfOpenSet { get; set; }
         public Dictionary<string, AStarNode> closedSet { get; set; }
-        private static AStarNode previousNode { get; set; }
         public void ExpandOpenSet(AStarNode currentBestNode, AirportRecord arrivalAirport)
         {
             WaypointRecord currentBestWaypoint = currentBestNode.associatedWaypoint;
@@ -112,15 +113,17 @@
             }
             else
             {
+                Console.WriteLine($"empty set at {currentNode.associatedWaypoint.ident}!");
                 throw new OpenSetEmptyException();
             }
 
-            Console.WriteLine($"{newNode.associatedWaypoint.ident}: f: {newNode.aStarScore:F2} g: {newNode.gScore:F2} h: {newNode.hScore:F2}");
+            //Console.WriteLine($"{newNode.associatedWaypoint.ident}: f: {newNode.aStarScore:F2} g: {newNode.gScore:F2} h: {newNode.hScore:F2}");
 
             if (newNode.hScore > bestHScoreNode.hScore)
             {
                 if (++nonImprovedHScoreIterations == MAX_NON_IMPROVED_H_SCORE_ITERATIONS)
                 {
+                    Console.WriteLine($"hScore has increased for too long at {newNode.associatedWaypoint.ident}!");
                     throw new RouteDiscontinuityException();
                 }
             }
@@ -132,23 +135,25 @@
 
             if (newNode.gScore > routeGreatCircleDistance * DIRECT_DISTANCE_DISCONTINUITY_CHECK_MULTIPLIER)
             {
+                Console.WriteLine($"Route too long at {newNode.associatedWaypoint.ident}!");
                 throw new RouteDiscontinuityException();
             }
 
             return newNode;
         }
 
-        public AStarNode ExpandGraphFromWaypointUntilDestinationReached(WaypointRecord originWaypoint, AirportRecord destinationAirport)
+        public AStarNode FindBestNodeToContinueRouteFromAfterDiscontinuity()
         {
-            AStarNode originNode = new AStarNode();
-            originNode.associatedWaypoint = originWaypoint;
-            originNode.gScore = 0;
-            originNode.hScore = Navigator.GetDistanceBetweenGeoCoordinates(originWaypoint.laty, originWaypoint.lonx, destinationAirport.laty, destinationAirport.lonx);
-            originNode.UpdateAStarScore();
-            originNode.isRoot = true;
-            originNode.parent = originNode;
+            openSet.Clear();
+            membersOfOpenSet.Clear();
+            nonImprovedHScoreIterations = 0;
 
-            routeGreatCircleDistance = Navigator.GetDistanceBetweenGeoCoordinates(originWaypoint.laty, originWaypoint.lonx, destinationAirport.laty, destinationAirport.lonx);
+            return bestHScoreNode;
+        }
+
+        public AStarNode ExpandGraphFromNodeUntilDestinationReached(AStarNode originNode, AirportRecord destinationAirport)
+        {
+            routeGreatCircleDistance = Navigator.GetDistanceBetweenGeoCoordinates(originNode.associatedWaypoint.laty, originNode.associatedWaypoint.lonx, destinationAirport.laty, destinationAirport.lonx);
 
             AStarNode currentNode = originNode;
             bool emptyOpenSet = false;
@@ -163,6 +168,41 @@
                 catch (OpenSetEmptyException)
                 {
                     emptyOpenSet = true;
+                }
+                catch (RouteDiscontinuityException)
+                {
+                    currentNode = FindBestNodeToContinueRouteFromAfterDiscontinuity();
+                    Console.WriteLine($"Lowest h score node: {currentNode.associatedWaypoint.ident}");
+
+                    AStarNode bestUsefullyConnectedNodeToBestHScoreNode = new AStarNode();
+                    try
+                    {
+                        bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint = Navigator.GetBestUsefullyConnectedWaypoint(currentNode.associatedWaypoint, destinationAirport, closedSet);
+                    }
+                    catch (OpenSetEmptyException)
+                    {
+                        emptyOpenSet = true;
+                        break;
+                    }
+
+                    AirwayRecord direct = new AirwayRecord();
+                    direct.isDirect = true;
+                    direct.length = Navigator.GetDistanceBetweenGeoCoordinates(currentNode.associatedWaypoint.laty,
+                        currentNode.associatedWaypoint.lonx,
+                        bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint.laty,
+                        bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint.lonx);
+
+                    bestUsefullyConnectedNodeToBestHScoreNode.parent = currentNode;
+                    bestUsefullyConnectedNodeToBestHScoreNode.ParentAirway = direct;
+                    bestUsefullyConnectedNodeToBestHScoreNode.gScore = currentNode.gScore + direct.length;
+                    bestUsefullyConnectedNodeToBestHScoreNode.hScore = Navigator.GetDistanceBetweenGeoCoordinates(bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint.laty,
+                        bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint.lonx,
+                        destinationAirport.laty,
+                        destinationAirport.lonx);
+
+                    //currentNode = ExpandGraphFromWaypointUntilDestinationReached(Navigator.GetBestUsefullyConnectedWaypoint(bestNode.associatedWaypoint, destinationAirport, closedSet), destinationAirport);
+                    currentNode = ExpandGraphFromNodeUntilDestinationReached(bestUsefullyConnectedNodeToBestHScoreNode, destinationAirport);
+                    break;
                 }
 
             }

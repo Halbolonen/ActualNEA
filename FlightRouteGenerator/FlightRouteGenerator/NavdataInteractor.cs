@@ -57,21 +57,18 @@ namespace FlightRouteGenerator
                         WaypointRecord wpRecord = new WaypointRecord();
 
 
-                        if (dataReader.IsDBNull(waypointCommandArincTypeColumnIndex))
+                        /*if (dataReader.IsDBNull(waypointCommandArincTypeColumnIndex))
                         {
-                            break;
-                        }
+                            continue;
+                        }*/
 
                         wpRecord.WaypointID = Convert.ToString(dataReader["waypoint_id"]);
                         wpRecord.ident = (string)dataReader["ident"];
                         wpRecord.laty = Convert.ToDouble(dataReader["laty"]);
                         wpRecord.lonx = Convert.ToDouble(dataReader["lonx"]);
-                        wpRecord.arincType = (string)dataReader["arinc_type"];
+                        //wpRecord.arincType = (string)dataReader["arinc_type"];
 
-                        if (wpRecord.arincType != "V")
-                        {
-                            recordDict.Add(wpRecord.WaypointID, wpRecord);
-                        }
+                        recordDict.Add(wpRecord.WaypointID, wpRecord);
                         break;
                     case "airport":
                         AirportRecord apRecord = new AirportRecord();
