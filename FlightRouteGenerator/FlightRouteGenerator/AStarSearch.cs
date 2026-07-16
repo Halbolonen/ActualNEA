@@ -1,4 +1,5 @@
 ﻿using System.Xml;
+using System.Diagnostics;
 
 namespace FlightRouteGenerator
 {
@@ -113,17 +114,15 @@ namespace FlightRouteGenerator
             }
             else
             {
-                Console.WriteLine($"empty set at {currentNode.associatedWaypoint.ident}!");
+                Debug.WriteLine($"empty set at {currentNode.associatedWaypoint.ident}!");
                 throw new OpenSetEmptyException();
             }
-
-            //Console.WriteLine($"{newNode.associatedWaypoint.ident}: f: {newNode.aStarScore:F2} g: {newNode.gScore:F2} h: {newNode.hScore:F2}");
 
             if (newNode.hScore > bestHScoreNode.hScore)
             {
                 if (++nonImprovedHScoreIterations == MAX_NON_IMPROVED_H_SCORE_ITERATIONS)
                 {
-                    Console.WriteLine($"hScore has increased for too long at {newNode.associatedWaypoint.ident}!");
+                    Debug.WriteLine($"hScore has increased for too long at {newNode.associatedWaypoint.ident}!");
                     throw new RouteDiscontinuityException();
                 }
             }
@@ -135,7 +134,7 @@ namespace FlightRouteGenerator
 
             if (newNode.gScore > routeGreatCircleDistance * DIRECT_DISTANCE_DISCONTINUITY_CHECK_MULTIPLIER)
             {
-                Console.WriteLine($"Route too long at {newNode.associatedWaypoint.ident}!");
+                Debug.WriteLine($"Route too long at {newNode.associatedWaypoint.ident}!");
                 throw new RouteDiscontinuityException();
             }
 
@@ -172,7 +171,6 @@ namespace FlightRouteGenerator
                 catch (RouteDiscontinuityException)
                 {
                     currentNode = FindBestNodeToContinueRouteFromAfterDiscontinuity();
-                    Console.WriteLine($"Lowest h score node: {currentNode.associatedWaypoint.ident}");
 
                     AStarNode bestUsefullyConnectedNodeToBestHScoreNode = new AStarNode();
                     try
@@ -185,12 +183,11 @@ namespace FlightRouteGenerator
                         break;
                     }
 
-                    AirwayRecord direct = new AirwayRecord();
-                    direct.isDirect = true;
-                    direct.length = Navigator.GetDistanceBetweenGeoCoordinates(currentNode.associatedWaypoint.laty,
+                    AirwayRecord direct = AirwayRecord.CreateDirectBetweenGeoCoordinates(currentNode.associatedWaypoint.laty,
                         currentNode.associatedWaypoint.lonx,
                         bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint.laty,
-                        bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint.lonx);
+                        bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint.lonx
+                        );
 
                     bestUsefullyConnectedNodeToBestHScoreNode.parent = currentNode;
                     bestUsefullyConnectedNodeToBestHScoreNode.ParentAirway = direct;
@@ -200,7 +197,6 @@ namespace FlightRouteGenerator
                         destinationAirport.laty,
                         destinationAirport.lonx);
 
-                    //currentNode = ExpandGraphFromWaypointUntilDestinationReached(Navigator.GetBestUsefullyConnectedWaypoint(bestNode.associatedWaypoint, destinationAirport, closedSet), destinationAirport);
                     currentNode = ExpandGraphFromNodeUntilDestinationReached(bestUsefullyConnectedNodeToBestHScoreNode, destinationAirport);
                     break;
                 }
@@ -209,40 +205,103 @@ namespace FlightRouteGenerator
             return currentNode;
         }
 
-        public List<RouteLeg> GetRouteToDestinationFromExpandedGraph(AStarNode currentNode, AirportRecord departureAirport)
+        public List<RouteLeg> GetRouteToDestinationFromExpandedGraph(AStarNode currentNode, AirportRecord departureAirport, AirportRecord arrivalAirport)
         {
             List<RouteLeg> route = new List<RouteLeg>();
             double previousgScore = 0;
 
-            while (!currentNode.isRoot)
+            void AddLegToRoute()
             {
                 previousgScore = currentNode.gScore;
 
                 RouteLeg leg = new RouteLeg();
                 leg.Waypoint = currentNode.associatedWaypoint;
-                if (currentNode.ParentAirway == null)
-                {
-                    Console.WriteLine(currentNode.associatedWaypoint.ident);
-                    Console.WriteLine(currentNode.isProductOfRouteDiscontinuity);
-                }
                 leg.Airway = currentNode.ParentAirway;
 
                 route.Add(leg);
                 currentNode = currentNode.parent;
             }
 
-            RouteLeg finalStep = new RouteLeg();
-            AirwayRecord finalAirway = new AirwayRecord();
+            AddLegToRoute();
 
-            finalAirway.isDirect = true;
-            finalAirway.length = Navigator.GetDistanceBetweenGeoCoordinates(departureAirport.laty, departureAirport.lonx, currentNode.associatedWaypoint.laty, currentNode.associatedWaypoint.lonx);
+            WaypointRecord finalWaypoint = route[0].Waypoint;
 
-            finalStep.Waypoint = currentNode.associatedWaypoint;
-            finalStep.Airway = finalAirway;
+            double distanceFromFinalWaypointToArrivalAirport =
+                Navigator.GetDistanceBetweenGeoCoordinates(finalWaypoint.laty, finalWaypoint.lonx,
+                arrivalAirport.laty, arrivalAirport.lonx);
 
-            route.Add(finalStep);
+            RouteLeg finalWptToDestinationLeg = new RouteLeg();
+            WaypointRecord arrivalAirportDummy = new WaypointRecord();
+            arrivalAirportDummy.ident = arrivalAirport.ident;
+
+            finalWptToDestinationLeg.Airway = AirwayRecord.CreateDirectBetweenGeoCoordinates(finalWaypoint.laty, finalWaypoint.lonx,
+    arrivalAirport.laty, arrivalAirport.lonx);
+            finalWptToDestinationLeg.Waypoint = arrivalAirportDummy;
+
+            RouteLeg finalStandardLeg = route[0];
+            route.Remove(finalStandardLeg);
+
+            route.Add(finalWptToDestinationLeg);
+
+            route.Add(finalStandardLeg);
+
+            while (!currentNode.isRoot)
+            {
+                AddLegToRoute();
+            }
+
+            RouteLeg depArptToFirstWptLeg = new RouteLeg();
+            AirwayRecord depArptToFirstWptArwy = AirwayRecord.CreateDirectBetweenGeoCoordinates(
+                departureAirport.laty, departureAirport.lonx,
+                currentNode.associatedWaypoint.laty, currentNode.associatedWaypoint.lonx);
+
+            depArptToFirstWptLeg.Waypoint = currentNode.associatedWaypoint;
+            depArptToFirstWptLeg.Airway = depArptToFirstWptArwy;
+
+            route.Add(depArptToFirstWptLeg);
 
             route.Reverse();
+
+            return route;
+        }
+
+        public static AStarNode CreateOriginNode(AirportRecord departureAirport, AirportRecord arrivalAirport)
+        {
+            AStarNode originNode = new AStarNode();
+            WaypointRecord closestWaypointToDepartureAirport = Navigator.GetBestUsefullyConnectedWaypointByGeoCoords(departureAirport.laty,
+                departureAirport.lonx, arrivalAirport, new Dictionary<string, AStarNode>());
+            originNode.associatedWaypoint = closestWaypointToDepartureAirport;
+            originNode.isRoot = true;
+            originNode.gScore = 0;
+            originNode.hScore = Navigator.GetDistanceBetweenGeoCoordinates(closestWaypointToDepartureAirport.laty, closestWaypointToDepartureAirport.lonx, arrivalAirport.laty, arrivalAirport.lonx);
+            originNode.UpdateAStarScore();
+
+            return originNode;
+        }
+
+        public Route GetRouteBetweenAirports(AirportRecord departureAirport, AirportRecord arrivalAirport)
+        {
+            Route route = new Route();
+
+            AStarNode originNode = CreateOriginNode(departureAirport, arrivalAirport);
+
+            route.DepartureAirport = departureAirport;
+            route.ArrivalAirport = arrivalAirport;
+            route.TotalDistance = 0;
+
+            AStarNode destinationNode = ExpandGraphFromNodeUntilDestinationReached(originNode, arrivalAirport);
+
+            route.Legs = GetRouteToDestinationFromExpandedGraph(destinationNode, departureAirport, arrivalAirport);
+
+            foreach (RouteLeg leg in route.Legs)
+            {
+                route.TotalDistance += leg.Length;
+
+                if (leg.Airway.isDirect)
+                {
+                    leg.Airway.airwayName = GLOBAL_SETTINGS.DIRECT_FORMAT;
+                }
+            }
 
             return route;
         }
