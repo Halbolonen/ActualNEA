@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace FlightRouteGenerator
 {
     internal static class NavdataInteractor
     {
-        private static SQLiteConnection navDBConnection = new SQLiteConnection(GLOBAL_SETTINGS.navDBFilePath);
+        private static string NAV_DB_FILE_PATH = $"Data Source=\"{Directory.GetCurrentDirectory()}\\Data\\navdata.sqlite\";";
+        private static SQLiteConnection navDBConnection = new SQLiteConnection(NAV_DB_FILE_PATH);
         public static Dictionary<string, Record> waypointRecordDict { get; private set; }
         public static Dictionary<string, Record> airportRecordDict { get; private set; }
         public static Dictionary<string, Record> airwayRecordDict { get; private set; }
@@ -22,7 +25,6 @@ namespace FlightRouteGenerator
         private static Dictionary<string, Record> LoadRecords(string typeOfRecord)
         {
             Dictionary<string, Record> recordDict = new Dictionary<string, Record>();
-
             navDBConnection.Open();
             string command = "";
             switch (typeOfRecord)
