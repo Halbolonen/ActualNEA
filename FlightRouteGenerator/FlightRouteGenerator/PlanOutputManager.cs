@@ -192,7 +192,7 @@ namespace FlightRouteGenerator
                 );
 
             flightPlan.Add(GenerateAirportATCWaypointXElement(route.DepartureAirport, placeholderArptAlt));
-            
+
             foreach (RouteLeg leg in route.Legs)
             {
                 if (!leg.isAirportLeg)
@@ -202,15 +202,10 @@ namespace FlightRouteGenerator
             }
 
             flightPlan.Add(GenerateAirportATCWaypointXElement(route.ArrivalAirport, placeholderArptAlt));
-
             simBase.Add(flightPlan);
 
-            fileContents = simBase.ToString();
-
-            using (StreamWriter writer = new StreamWriter(File.Open(filePath, FileMode.Create)))
-            {
-                writer.Write(fileContents);
-            }
+            XDocument planDoc = new XDocument(new XDeclaration("1.0", "UTF-8", null), simBase);
+            planDoc.Save(filePath);
 
             Console.WriteLine($"Flight plan exported as {fileName} to {filePath}");
         }
