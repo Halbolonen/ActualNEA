@@ -39,8 +39,34 @@ namespace FlightRouteGenerator
             try
             {
                 route = aStar.GetRouteBetweenAirports(departureAirport, arrivalAirport);
-                PlanOutputManager.OutputRouteToConsole(route);
-                PlanOutputManager.OutputRouteToFMSFile(route);
+
+                Console.Clear();
+                Console.WriteLine("Use the menu to select the formats you want your flight plan to be outputted in.\n");
+
+                List<string> outputOptions = new List<string> {"Console","PDF File","X-Plane route file (.fms)","Microsoft Flight Simulator route file (.pln)"};
+                HashSet<int> choices = MultipleChoiceMenu.GetUserChoice(outputOptions);
+
+                foreach (int choice in choices)
+                {
+                    switch (choice)
+                    {
+                        case 0:
+                            PlanOutputManager.OutputRouteToConsole(route);
+                            break;
+
+                        case 1:
+                            Console.WriteLine("not implemented");
+                            break;
+
+                        case 2:
+                            PlanOutputManager.OutputRouteToFMSFile(route);
+                            break;
+
+                        case 3:
+                            Console.WriteLine("not implemented");
+                            break;
+                    }
+                }
             }
             catch (RouteDiscontinuityException)
             {
@@ -65,6 +91,7 @@ namespace FlightRouteGenerator
 
         public static void Main()
         {
+
             StartProgram();
 
             Console.WriteLine("\n\nPress any key to exit.");
