@@ -63,7 +63,7 @@ namespace FlightRouteGenerator
                             break;
 
                         case 3:
-                            Console.WriteLine("not implemented");
+                            PlanOutputManager.OutputRouteToPLNFile(route);
                             break;
                     }
                 }
