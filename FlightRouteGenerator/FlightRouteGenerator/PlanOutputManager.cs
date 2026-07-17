@@ -74,7 +74,7 @@ namespace FlightRouteGenerator
                 writer.Write(fileContents);
             }
 
-            Console.WriteLine($"Flight plan exported as {fileName} to {filePath}");
+            Console.WriteLine($"X-Plane route file:\nFlight plan exported as {fileName} to {filePath}\n");
         }
 
         private static string GenerateLLA(double laty, double lonx, double altitude)
@@ -207,7 +207,7 @@ namespace FlightRouteGenerator
             XDocument planDoc = new XDocument(new XDeclaration("1.0", "UTF-8", null), simBase);
             planDoc.Save(filePath);
 
-            Console.WriteLine($"Flight plan exported as {fileName} to {filePath}");
+            Console.WriteLine($"Microsoft Flight Simulator route file:\nFlight plan exported as {fileName} to {filePath}\n");
         }
     }
 }

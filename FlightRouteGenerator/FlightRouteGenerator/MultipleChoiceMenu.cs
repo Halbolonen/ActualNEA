@@ -41,7 +41,8 @@
             DrawOptions(OptionList, selectedOptions, baseColor, baseCursorLeft, baseCursorTop);
 
             ClearInputBuffer();
-            Console.WriteLine("\nSelect one or more options from the list above.\nUse the numbers on your keyboard to toggle selection for an option.\nDo not use the numpad.");
+            Console.WriteLine("\nSelect one or more options from the list above.\nUse the numbers on your keyboard to toggle selection for an option.\nDo not use the numpad.\n");
+            int belowTextCursorTop = Console.CursorTop;
             Console.CursorVisible = false;
             while (!choiceMade)
             {
@@ -73,6 +74,8 @@
                 Console.WriteLine("\n\n");
             }
 
+            Console.CursorTop = belowTextCursorTop;
+            Console.CursorLeft = baseCursorLeft;
             Console.CursorVisible = true;
             return selectedOptions;
         }
