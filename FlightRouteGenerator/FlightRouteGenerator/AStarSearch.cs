@@ -118,26 +118,6 @@ namespace FlightRouteGenerator
                 throw new OpenSetEmptyException();
             }
 
-            if (newNode.hScore > bestHScoreNode.hScore)
-            {
-                if (++nonImprovedHScoreIterations == MAX_NON_IMPROVED_H_SCORE_ITERATIONS)
-                {
-                    Debug.WriteLine($"hScore has increased for too long at {newNode.associatedWaypoint.ident}!");
-                    throw new RouteDiscontinuityException();
-                }
-            }
-            else
-            {
-                bestHScoreNode = newNode;
-                nonImprovedHScoreIterations = 0;
-            }
-
-            if (newNode.gScore > routeGreatCircleDistance * DIRECT_DISTANCE_DISCONTINUITY_CHECK_MULTIPLIER)
-            {
-                Debug.WriteLine($"Route too long at {newNode.associatedWaypoint.ident}!");
-                throw new RouteDiscontinuityException();
-            }
-
             return newNode;
         }
 
@@ -155,9 +135,10 @@ namespace FlightRouteGenerator
             routeGreatCircleDistance = Navigator.GetDistanceBetweenGeoCoordinates(originNode.associatedWaypoint.laty, originNode.associatedWaypoint.lonx, destinationAirport.laty, destinationAirport.lonx);
 
             AStarNode currentNode = originNode;
+            WaypointRecord destinationWaypoint = Navigator.GetClosestWaypointToGeoCoordinates(destinationAirport.laty, destinationAirport.lonx);
             bool emptyOpenSet = false;
 
-            while (!emptyOpenSet)
+            while (currentNode.associatedWaypoint != destinationWaypoint && !emptyOpenSet)
             {
                 ExpandOpenSet(currentNode, destinationAirport);
                 try
@@ -168,40 +149,14 @@ namespace FlightRouteGenerator
                 {
                     emptyOpenSet = true;
                 }
-                catch (RouteDiscontinuityException)
-                {
-                    currentNode = FindBestNodeToContinueRouteFromAfterDiscontinuity();
-
-                    AStarNode bestUsefullyConnectedNodeToBestHScoreNode = new AStarNode();
-                    try
-                    {
-                        bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint = Navigator.GetBestUsefullyConnectedWaypoint(currentNode.associatedWaypoint, destinationAirport, closedSet);
-                    }
-                    catch (OpenSetEmptyException)
-                    {
-                        emptyOpenSet = true;
-                        break;
-                    }
-
-                    AirwayRecord direct = AirwayRecord.CreateDirectBetweenGeoCoordinates(currentNode.associatedWaypoint.laty,
-                        currentNode.associatedWaypoint.lonx,
-                        bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint.laty,
-                        bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint.lonx
-                        );
-
-                    bestUsefullyConnectedNodeToBestHScoreNode.parent = currentNode;
-                    bestUsefullyConnectedNodeToBestHScoreNode.ParentAirway = direct;
-                    bestUsefullyConnectedNodeToBestHScoreNode.gScore = currentNode.gScore + direct.length;
-                    bestUsefullyConnectedNodeToBestHScoreNode.hScore = Navigator.GetDistanceBetweenGeoCoordinates(bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint.laty,
-                        bestUsefullyConnectedNodeToBestHScoreNode.associatedWaypoint.lonx,
-                        destinationAirport.laty,
-                        destinationAirport.lonx);
-
-                    currentNode = ExpandGraphFromNodeUntilDestinationReached(bestUsefullyConnectedNodeToBestHScoreNode, destinationAirport);
-                    break;
-                }
 
             }
+
+            if (emptyOpenSet)
+            {
+                throw new RouteDiscontinuityException();
+            }
+
             return currentNode;
         }
 
@@ -268,8 +223,8 @@ namespace FlightRouteGenerator
         public static AStarNode CreateOriginNode(AirportRecord departureAirport, AirportRecord arrivalAirport)
         {
             AStarNode originNode = new AStarNode();
-            WaypointRecord closestWaypointToDepartureAirport = Navigator.GetBestUsefullyConnectedWaypointByGeoCoords(departureAirport.laty,
-                departureAirport.lonx, arrivalAirport, new Dictionary<string, AStarNode>());
+            WaypointRecord closestWaypointToDepartureAirport = Navigator.GetClosestWaypointToGeoCoordinates(departureAirport.laty,
+                departureAirport.lonx);
             originNode.associatedWaypoint = closestWaypointToDepartureAirport;
             originNode.isRoot = true;
             originNode.gScore = 0;
@@ -289,7 +244,17 @@ namespace FlightRouteGenerator
             route.ArrivalAirport = arrivalAirport;
             route.TotalDistance = 0;
 
-            AStarNode destinationNode = ExpandGraphFromNodeUntilDestinationReached(originNode, arrivalAirport);
+            AStarNode destinationNode;
+
+            try
+            {
+                destinationNode = ExpandGraphFromNodeUntilDestinationReached(originNode, arrivalAirport);
+            }
+            catch (RouteDiscontinuityException)
+            {
+                throw;
+            }
+
 
             route.Legs = GetRouteToDestinationFromExpandedGraph(destinationNode, departureAirport, arrivalAirport);
 

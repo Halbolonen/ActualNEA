@@ -186,6 +186,8 @@ namespace FlightRouteGenerator
                 }
             }
 
+            Console.WriteLine(waypointRecordDict.Count);
+
             outgoingAirwaysByWaypointID = new Dictionary<string, List<(WaypointRecord, AirwayRecord)>>();
             Record toWaypoint = new Record();
 
@@ -221,7 +223,7 @@ namespace FlightRouteGenerator
                 }
             }
 
-            throw new Exception("no waypoint found by ident");
+            throw new WaypointNotFoundByIdentException();
         }
 
         public static AirportRecord FindAirportByIdent(string inputIdent)
@@ -234,7 +236,7 @@ namespace FlightRouteGenerator
                 }
             }
 
-            throw new Exception("no airport found by ident");
+            throw new AirportNotFoundByIdentException();
         }
 
         public static AirwayRecord FindAirwayByName(string inputName)
@@ -247,7 +249,7 @@ namespace FlightRouteGenerator
                 }
             }
 
-            throw new Exception("no airway found by ident");
+            throw new AirwayNotFoundByIdentException();
         }
     }
 }
