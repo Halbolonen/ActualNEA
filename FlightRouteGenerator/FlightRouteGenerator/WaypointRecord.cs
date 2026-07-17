@@ -24,6 +24,8 @@ namespace FlightRouteGenerator
                 waypointID = value;
             } 
         }
+        public int altitude { get; set; }
+        // in ft
 
         public WaypointRecord()
         {

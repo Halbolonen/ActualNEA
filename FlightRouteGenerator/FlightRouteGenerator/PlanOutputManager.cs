@@ -51,7 +51,7 @@ namespace FlightRouteGenerator
             string fileContents = $"I\n1100 Version\nCYCLE {GLOBAL_SETTINGS.AIRAC_CYCLE}\nADEP " +
                 $"{route.DepartureAirport.ident}\nADES {route.ArrivalAirport.ident}\nNUMENR {route.enrouteWaypointCount}\n" +
                 $"{(int)WaypointType.Airport} {route.DepartureAirport.ident} " +
-                $"ADEP {wptAlt} {route.DepartureAirport.laty:F6} {route.DepartureAirport.lonx:F6}\n";
+                $"ADEP {route.DepartureAirport.altitude:F6} {route.DepartureAirport.laty:F6} {route.DepartureAirport.lonx:F6}\n";
 
             for (int i = 0; i < route.Legs.Count; i++)
             {
@@ -64,7 +64,7 @@ namespace FlightRouteGenerator
                 }
                 else
                 {
-                    fileContents += $"{(int)WaypointType.Airport} {leg.Waypoint.ident} ADES {wptAlt} " +
+                    fileContents += $"{(int)WaypointType.Airport} {leg.Waypoint.ident} ADES {route.ArrivalAirport.altitude:F6} " +
                         $"{route.ArrivalAirport.laty:F6} {route.ArrivalAirport.lonx:F6}";
                 }
             }
@@ -161,12 +161,11 @@ namespace FlightRouteGenerator
             string filePath = $"{SHGetKnownFolderPath(KnownFolderGUIDs["Downloads"], 0)}\\{fileName}";
 
             double placeholderWptAlt = 67;
-            double placeholderArptAlt = 42;
             string crzAlt = "CRZ_ALT_HERE";
             string planTitle = $"{route.DepartureAirport.ident} to {route.ArrivalAirport.ident}";
 
-            string departureLLA = GenerateLLA(route.DepartureAirport.laty, route.DepartureAirport.lonx, placeholderArptAlt);
-            string arrivalLLA = GenerateLLA(route.ArrivalAirport.laty, route.ArrivalAirport.lonx, placeholderArptAlt);
+            string departureLLA = GenerateLLA(route.DepartureAirport.laty, route.DepartureAirport.lonx, route.DepartureAirport.altitude);
+            string arrivalLLA = GenerateLLA(route.ArrivalAirport.laty, route.ArrivalAirport.lonx, route.DepartureAirport.altitude);
 
             Dictionary<string, PLNWaypointInfo> waypointInfoDict = new Dictionary<string, PLNWaypointInfo>();
 
@@ -191,7 +190,7 @@ namespace FlightRouteGenerator
                     )
                 );
 
-            flightPlan.Add(GenerateAirportATCWaypointXElement(route.DepartureAirport, placeholderArptAlt));
+            flightPlan.Add(GenerateAirportATCWaypointXElement(route.DepartureAirport, route.DepartureAirport.altitude));
 
             foreach (RouteLeg leg in route.Legs)
             {
@@ -201,7 +200,7 @@ namespace FlightRouteGenerator
                 }
             }
 
-            flightPlan.Add(GenerateAirportATCWaypointXElement(route.ArrivalAirport, placeholderArptAlt));
+            flightPlan.Add(GenerateAirportATCWaypointXElement(route.ArrivalAirport, route.ArrivalAirport.altitude));
             simBase.Add(flightPlan);
 
             XDocument planDoc = new XDocument(new XDeclaration("1.0", "UTF-8", null), simBase);

@@ -34,7 +34,7 @@ namespace FlightRouteGenerator
 
                 case "airport":
                     command =
-                @"SELECT airport_id, ident, name, lonx, laty
+                @"SELECT airport_id, ident, name, lonx, laty, altitude
                 FROM airport";
                     break;
 
@@ -85,6 +85,7 @@ namespace FlightRouteGenerator
                         apRecord.name = (string)dataReader["name"];
                         apRecord.laty = Convert.ToDouble(dataReader["laty"]);
                         apRecord.lonx = Convert.ToDouble(dataReader["lonx"]);
+                        apRecord.altitude = Convert.ToInt32(dataReader["altitude"]);
 
                         recordDict.Add(apRecord.AirportID, apRecord);
                         break;

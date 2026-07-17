@@ -12,6 +12,9 @@ namespace FlightRouteGenerator
         public string name { get; set; }
         public double lonx { get; set; }
         public double laty { get; set; }
+        public int altitude { get; set; }
+        // in ft
+
         private string airportID;
         public string AirportID
         {
