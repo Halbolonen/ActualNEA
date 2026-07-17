@@ -78,19 +78,25 @@ namespace FlightRouteGenerator
         {
             // https://docs.flightsimulator.com/msfs2024/html/5_Content_Configuration/Mission_XML_Files/Flight_Plan_XML_Properties.htm
 
-            string wptAlt = "WPT_ALT_HERE";
+            double placeholderWptAlt = 67;
+            double placeholderArptAlt = 42;
             string crzAlt = "CRZ_ALT_HERE";
+            string planTitle = $"{route.DepartureAirport.ident} to {route.ArrivalAirport.ident}";
+            string printableDepartureCoords = ConvertCoordinates.DecimalToDegMinSec(route.DepartureAirport.laty, route.DepartureAirport.lonx).GetPrintableString();
+
+            string departureLLA_Assembly = $"{printableDepartureCoords},{placeholderArptAlt.ToString("000000.00")}";
 
             XElement simBase = new XElement("Simbase.Document",
                 new XAttribute("Type", "AceXML"),
                 new XAttribute("version", "1,0"),
                 new XElement("Descr", "AceXML Document"),
                 new XElement("FlightPlan.FlightPlan",
-                    new XElement("Title", $"{route.DepartureAirport.ident} to {route.ArrivalAirport.ident}")),
+                    new XElement("Title", planTitle)),
                     new XElement("FPType", "VFR"),
                     new XElement("CruisingAlt", crzAlt),
                     new XElement("DepartureID", route.DepartureAirport),
-                    new XElement("DepartureLLA", ));
+                    new XElement("DepartureLLA", departureLLA_Assembly),
+                    new XElement("DestinationID",route.ArrivalAirport.ident));
 
         }
     }

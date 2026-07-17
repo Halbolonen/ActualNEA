@@ -8,12 +8,30 @@ namespace FlightRouteGenerator
 {
     internal class ConvertCoordinates
     {
+        private static DegMinSecOrdinate ConvertDecimalOrdinateToDMS(double decimalOrdinate)
+        {
+            DegMinSecOrdinate resultOrdinate = new DegMinSecOrdinate();
+
+            resultOrdinate.Degrees = Math.Floor(Math.Abs(decimalOrdinate));
+            double minutesDecimalPart = Math.Floor(Math.Abs(decimalOrdinate) - resultOrdinate.Degrees) * 60;
+            resultOrdinate.Minutes = Math.Floor(minutesDecimalPart);
+            resultOrdinate.Seconds = (minutesDecimalPart - resultOrdinate.Minutes) * 60;
+
+            return resultOrdinate;
+        }
+
         public static DegMinSecCoordinates DecimalToDegMinSec(double decimalLaty, double decimalLonx)
         {
-            bool latyIsSouth = decimalLaty < 0;
-            bool lonxIsWest = decimalLonx < 0;
-
             DegMinSecCoordinates dmsCoords = new DegMinSecCoordinates();
+
+            dmsCoords.LatitudeIsSouth = decimalLaty < 0;
+            dmsCoords.LongitudeIsWest = decimalLonx < 0;
+
+            dmsCoords.Latitude = ConvertDecimalOrdinateToDMS(decimalLaty);
+            dmsCoords.Longitude = ConvertDecimalOrdinateToDMS(decimalLonx);
+
+
+            return dmsCoords;
         }
     }
 }
