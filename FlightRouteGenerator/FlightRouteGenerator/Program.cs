@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Threading;
 
 namespace FlightRouteGenerator
 {
     class Program
     {
-        public static void Main()
+        private static void RunProgram()
         {
             Console.WriteLine("Initialising datasets, please wait...");
             NavdataInteractor.Initialise();
@@ -15,14 +16,59 @@ namespace FlightRouteGenerator
             Console.Write("Enter arrival airport ICAO code: ");
             string arrivalInput = Console.ReadLine().ToUpper();
 
-            AirportRecord departureAirport = NavdataInteractor.FindAirportByIdent(departureInput);
-            AirportRecord arrivalAirport = NavdataInteractor.FindAirportByIdent(arrivalInput);
+            if (departureInput == arrivalInput)
+            {
+                throw new InvalidRouteInputException();
+            }
+            AirportRecord departureAirport;
+            AirportRecord arrivalAirport;
+
+            try
+            {
+                departureAirport = NavdataInteractor.FindAirportByIdent(departureInput);
+                arrivalAirport = NavdataInteractor.FindAirportByIdent(arrivalInput);
+            }
+            catch (AirportNotFoundByIdentException)
+            {
+                throw new InvalidRouteInputException();
+            }
 
             AStarSearch aStar = new AStarSearch();
-            Route route = aStar.GetRouteBetweenAirports(departureAirport, arrivalAirport);
+            Route route;
 
-            PlanOutputManager.OutputRouteToConsole(route);
-            PlanOutputManager.OutputRouteToFMSFile(route);
+            try
+            {
+                route = aStar.GetRouteBetweenAirports(departureAirport, arrivalAirport);
+                PlanOutputManager.OutputRouteToConsole(route);
+                PlanOutputManager.OutputRouteToFMSFile(route);
+            }
+            catch (RouteDiscontinuityException)
+            {
+                Console.WriteLine($"\nUnfortunately, no route could be found between {departureAirport.ident} and {arrivalAirport.ident}.");
+            }
+        }
+
+        private static void StartProgram()
+        {
+            try
+            {
+                RunProgram();
+            }
+            catch (InvalidRouteInputException)
+            {
+                Console.WriteLine("\n\nInvalid input.\nOnly enter different valid ICAO airport codes.\nPress any key to restart...");
+                Console.ReadKey();
+                Console.Clear();
+                StartProgram();
+            }
+        }
+
+        public static void Main()
+        {
+            StartProgram();
+
+            Console.WriteLine("\n\nPress any key to exit.");
+            Console.ReadKey();
         }
     }
 }
