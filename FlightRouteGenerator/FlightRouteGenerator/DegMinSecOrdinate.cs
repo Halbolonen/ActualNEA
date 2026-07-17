@@ -8,8 +8,57 @@ namespace FlightRouteGenerator
 {
     internal class DegMinSecOrdinate
     {
-        public double Degrees { get; set; }
-        public double Minutes { get; set; }
-        public double Seconds { get; set; }
+        private double degrees;
+        private double minutes;
+        private double seconds;
+        public double Degrees
+        {
+            get
+            {
+                return degrees;
+            }
+            set
+            {
+                degrees = value;
+            }
+        }
+        public double Minutes
+        {
+            get
+            {
+                return minutes;
+            }
+            set
+            {
+                if (value == 60)
+                {
+                    minutes = 0;
+                    Degrees++;
+                }
+                else
+                {
+                    minutes = value;
+                }
+            }
+        }
+        public double Seconds
+        {
+            get
+            {
+                return seconds;
+            }
+            set
+            {
+                if (value == 60)
+                {
+                    seconds = 0;
+                    Minutes++;
+                }
+                else
+                {
+                    seconds = value;
+                }
+            }
+        }
     }
 }

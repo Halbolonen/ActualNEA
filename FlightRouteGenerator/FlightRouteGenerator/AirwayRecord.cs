@@ -30,11 +30,13 @@ namespace FlightRouteGenerator
         public double toLonx { get; set; }
         public double length { get; set; }
         public double aStarScore { get; set; }
+        public static string DEFAULT_DIRECT_FORMAT { get; private set; }
         public bool isDirect { get; set; }
 
         public AirwayRecord()
         {
             isDirect = false;
+            DEFAULT_DIRECT_FORMAT = GLOBAL_SETTINGS.FMS_DIRECT_FORMAT;
         }
 
         public static AirwayRecord CreateDirectBetweenGeoCoordinates(double fromLaty, double fromLonx, double toLaty, double toLonx)
@@ -43,7 +45,7 @@ namespace FlightRouteGenerator
 
             direct.length = Navigator.GetDistanceBetweenGeoCoordinates(fromLaty, fromLonx, toLaty, toLonx);
             direct.isDirect = true;
-            direct.airwayName = GLOBAL_SETTINGS.FMS_DIRECT_FORMAT;
+            direct.airwayName = DEFAULT_DIRECT_FORMAT;
 
             return direct;
         }

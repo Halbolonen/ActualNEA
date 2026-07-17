@@ -11,6 +11,7 @@ namespace FlightRouteGenerator
     {
         public WaypointRecord Waypoint { get; set; }
         private AirwayRecord airway;
+        public bool isAirportLeg = false;
         public AirwayRecord Airway
         {
             get

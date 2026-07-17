@@ -188,6 +188,7 @@ namespace FlightRouteGenerator
             RouteLeg finalWptToDestinationLeg = new RouteLeg();
             WaypointRecord arrivalAirportDummy = new WaypointRecord();
             arrivalAirportDummy.ident = arrivalAirport.ident;
+            finalWptToDestinationLeg.isAirportLeg = true;
 
             finalWptToDestinationLeg.Airway = AirwayRecord.CreateDirectBetweenGeoCoordinates(finalWaypoint.laty, finalWaypoint.lonx,
     arrivalAirport.laty, arrivalAirport.lonx);
@@ -212,6 +213,7 @@ namespace FlightRouteGenerator
 
             depArptToFirstWptLeg.Waypoint = currentNode.associatedWaypoint;
             depArptToFirstWptLeg.Airway = depArptToFirstWptArwy;
+            depArptToFirstWptLeg.isAirportLeg = true;
 
             route.Add(depArptToFirstWptLeg);
 
@@ -264,7 +266,8 @@ namespace FlightRouteGenerator
 
                 if (leg.Airway.isDirect)
                 {
-                    leg.Airway.airwayName = GLOBAL_SETTINGS.DIRECT_FORMAT;
+                    // TODO: move this logic to the console printing method.
+                    //leg.Airway.airwayName = GLOBAL_SETTINGS.DIRECT_FORMAT;
                 }
             }
 
