@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.InteropServices;
+using System.Xml.Linq;
 
 namespace FlightRouteGenerator
 {
     internal class PlanOutputManager
     {
 
-        private static Dictionary<string, Guid> KnownFolderGUIDs = new Dictionary<string, Guid> 
+        private static Dictionary<string, Guid> KnownFolderGUIDs = new Dictionary<string, Guid>
         {
             { "Downloads", new Guid("374DE290-123F-4565-9164-39C4925E467B") }
         };
@@ -45,6 +41,7 @@ namespace FlightRouteGenerator
 
         public static void OutputRouteToFMSFile(Route route)
         {
+            // https://developer.x-plane.com/article/flightplan-files-v11-fms-file-format/
 
             const string DIRECT = "DRCT";
             string wptAlt = "WPT_ALT_HERE";
@@ -79,6 +76,21 @@ namespace FlightRouteGenerator
 
         public static void OutputRouteToPLNFile(Route route)
         {
+            // https://docs.flightsimulator.com/msfs2024/html/5_Content_Configuration/Mission_XML_Files/Flight_Plan_XML_Properties.htm
+
+            string wptAlt = "WPT_ALT_HERE";
+            string crzAlt = "CRZ_ALT_HERE";
+
+            XElement simBase = new XElement("Simbase.Document",
+                new XAttribute("Type", "AceXML"),
+                new XAttribute("version", "1,0"),
+                new XElement("Descr", "AceXML Document"),
+                new XElement("FlightPlan.FlightPlan",
+                    new XElement("Title", $"{route.DepartureAirport.ident} to {route.ArrivalAirport.ident}")),
+                    new XElement("FPType", "VFR"),
+                    new XElement("CruisingAlt", crzAlt),
+                    new XElement("DepartureID", route.DepartureAirport),
+                    new XElement("DepartureLLA", ));
 
         }
     }
