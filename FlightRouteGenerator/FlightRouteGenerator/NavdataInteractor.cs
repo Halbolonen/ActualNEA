@@ -17,6 +17,7 @@ namespace FlightRouteGenerator
         public static HashSet<string> NDBIdentHashSet { get; private set; }
         public static Dictionary<string, List<(WaypointRecord, AirwayRecord)>> outgoingAirwaysByWaypointID { get; set; }
         private static HashSet<string> connectedWaypointIDs = new HashSet<string>();
+        public static bool Initialised { get; private set; }
 
         private static Dictionary<string, Record> LoadRecords(string typeOfRecord)
         {
@@ -187,8 +188,6 @@ namespace FlightRouteGenerator
                 }
             }
 
-            Console.WriteLine(waypointRecordDict.Count);
-
             outgoingAirwaysByWaypointID = new Dictionary<string, List<(WaypointRecord, AirwayRecord)>>();
             Record toWaypoint = new Record();
 
@@ -212,6 +211,8 @@ namespace FlightRouteGenerator
                     }
                 }
             }
+
+            Initialised = true;
         }
 
         public static WaypointRecord FindWaypointByIdent(string inputIdent)

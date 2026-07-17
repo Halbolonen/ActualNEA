@@ -5,11 +5,23 @@ namespace FlightRouteGenerator
 {
     class Program
     {
-        private static void RunProgram()
+        private static async Task RunProgram()
         {
-            Console.WriteLine("Initialising datasets, please wait...");
-            NavdataInteractor.Initialise();
+            if (!NavdataInteractor.Initialised)
+            {
+                Console.WriteLine("Initialising datasets, please wait...");
+                NavdataInteractor.Initialise();
+                Console.WriteLine("Done!\n");
+            }
+            if (!PerformanceDataService.initialisationStarted)
+            {
+                Console.WriteLine("Initialising Performance Data Service, please wait...");
+                await PerformanceDataService.Initialise();
+                Console.WriteLine("Done!\n");
+            }
             Console.Clear();
+
+            Console.WriteLine(await PerformanceDataService.GetResponse("items/0"));
 
             Console.Write("Welcome to the Flight Route Planner!\nEnter departure airport ICAO code: ");
             string departureInput = Console.ReadLine().ToUpper();
@@ -74,25 +86,24 @@ namespace FlightRouteGenerator
             }
         }
 
-        private static void StartProgram()
+        private static async Task StartProgram()
         {
             try
             {
-                RunProgram();
+                await RunProgram();
             }
             catch (InvalidRouteInputException)
             {
                 Console.WriteLine("\n\nInvalid input.\nOnly enter different valid ICAO airport codes.\nPress any key to restart...");
                 Console.ReadKey();
-                Console.Clear();
-                StartProgram();
+                await StartProgram();
             }
         }
 
-        public static void Main()
+        public static async Task Main()
         {
 
-            StartProgram();
+            await StartProgram();
 
             Console.WriteLine("\n\nPress any key to exit.");
             Console.ReadKey();
