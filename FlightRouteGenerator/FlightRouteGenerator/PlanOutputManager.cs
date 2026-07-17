@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,6 +9,15 @@ namespace FlightRouteGenerator
 {
     internal class PlanOutputManager
     {
+
+        private static Dictionary<string, Guid> KnownFolderGUIDs = new Dictionary<string, Guid> 
+        {
+            { "Downloads", new Guid("374DE290-123F-4565-9164-39C4925E467B") }
+        };
+
+        [DllImport("shell32", CharSet = CharSet.Unicode, ExactSpelling = true, PreserveSig = false)]
+        private static extern string SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid rfid, uint dwFlags, nint hToken = 0);
+
         public static void OutputRouteToConsole(Route route)
         {
             Console.WriteLine("\nYour route:\n");
@@ -35,6 +45,7 @@ namespace FlightRouteGenerator
 
         public static void OutputRouteToFMSFile(Route route)
         {
+
             const string DIRECT = "DRCT";
             string wptAlt = "WPT_ALT_HERE";
             string fileContents = $"I\n1100 Version\nCYCLE {GLOBAL_SETTINGS.AIRAC_CYCLE}\nADEP " +
@@ -49,7 +60,7 @@ namespace FlightRouteGenerator
                 if (i < route.Legs.Count - 1)
                 {
                     fileContents += $"{leg.Waypoint.Type} {leg.Waypoint.ident} {leg.Airway.airwayName} {wptAlt} " +
-$"{leg.Waypoint.laty} {leg.Waypoint.lonx}\n";
+                        $"{leg.Waypoint.laty} {leg.Waypoint.lonx}\n";
                 }
                 else
                 {
@@ -58,7 +69,17 @@ $"{leg.Waypoint.laty} {leg.Waypoint.lonx}\n";
                 }
             }
 
-            Console.WriteLine(fileContents);
+            string filePath = $"{SHGetKnownFolderPath(KnownFolderGUIDs["Downloads"], 0)}\\{route.DepartureAirport.ident}{route.ArrivalAirport.ident}.fms";
+
+            using (StreamWriter writer = new StreamWriter(File.Open(filePath, FileMode.Create)))
+            {
+                writer.Write(fileContents);
+            }
+        }
+
+        public static void OutputRouteToPLNFile(Route route)
+        {
+
         }
     }
 }
