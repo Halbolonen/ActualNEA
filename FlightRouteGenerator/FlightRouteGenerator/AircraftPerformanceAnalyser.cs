@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 
 namespace FlightRouteGenerator
 {
@@ -39,12 +33,13 @@ namespace FlightRouteGenerator
                 route.Aircraft.PassengerLoadLimits.low,
                 route.Aircraft.PassengerLoadLimits.max + 1
                 ),
-                BagsAndCargo = route.Loadsheet.Pax * BAGS_AND_CARGO_PER_PAX,
-                Payload = route.Loadsheet.Pax * PAX_AND_CARRY_ON_MASS + route.Loadsheet.BagsAndCargo,
-                ZFW = route.Aircraft.OEW + route.Loadsheet.Payload
             };
 
-            int consumedFuel = FlightSimulator.GetFlightFuelConsumption(
+            route.Loadsheet.BagsAndCargo = route.Loadsheet.Pax * BAGS_AND_CARGO_PER_PAX;
+            route.Loadsheet.Payload = route.Loadsheet.Pax * PAX_AND_CARRY_ON_MASS + route.Loadsheet.BagsAndCargo;
+            route.Loadsheet.ZFW = route.Aircraft.OEW + route.Loadsheet.Payload;
+
+            int consumedFuel = await FlightSimulator.GetFlightFuelConsumption(
                 blockFuelEstimate, route.Loadsheet.ZFW, route.Aircraft.ICAOIdent
                 );
 

@@ -49,6 +49,8 @@ namespace FlightRouteGenerator
             double machNumber = Math.Sqrt(5 * Math.Pow(((qc / P) + 1), (1/3.5) - 1));
             // subsonic mach number
             // https://www.aviationhunt.com/airspeed-conversion-calculator/
+
+            return machNumber * localMachOne;
         }
 
         public static async Task<int> GetFlightFuelConsumption(int blockFuel, int zfw, string aircraftType)
@@ -68,7 +70,7 @@ namespace FlightRouteGenerator
                 {
                     aircraft_type = aircraftType
                 }
-                );
+            );
 
 
             FlightPhase phaseOfFlight = FlightPhase.Takeoff;
@@ -76,11 +78,15 @@ namespace FlightRouteGenerator
                 await PerformanceDataService.GetResponse("get_initclimb_vs", HttpMethod.Post, serialisedAircraftInfo
                 )
             );
+            // FIXME: convert from m/s to fpm and make int
+
             cas = int.Parse(
                 await PerformanceDataService.GetResponse("get_climb_init_vcas", HttpMethod.Post, serialisedAircraftInfo
                 )
             );
-
+            double tas = CAStoTAS(5000, cas);
+            Console.WriteLine(tas);
+            throw new NotImplementedException();
         }
     }
 }

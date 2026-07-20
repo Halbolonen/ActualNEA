@@ -65,9 +65,9 @@ namespace FlightRouteGenerator
             aircraft.PassengerLoadLimits = JsonSerializer.Deserialize<PassengerLoadRange>(
                 await InteractWithPDS("get_aircraft_passenger_load_range", HttpMethod.Post, serialisedAircraftRequest)
                 );
-            aircraft.OEW = int.Parse(JsonSerializer.Deserialize<string>(
+            aircraft.OEW = int.Parse(
                 await InteractWithPDS("get_aircraft_oew", HttpMethod.Post, serialisedAircraftRequest)
-                ));
+                );
 
             return aircraft;
         }
