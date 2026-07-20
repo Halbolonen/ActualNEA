@@ -1,37 +1,53 @@
 from fastapi import FastAPI
+from openap import prop
+from openap.kinematic import WRAP
+from pydantic import BaseModel
 
 app = FastAPI()
-items = ["B738","A320","B77W","B752"]
+
+class AircraftRequest(BaseModel):
+    aircraft_type: str
 
 @app.get("/")
 def root():
-    return items
+    return "PDS ONLINE"
 
-@app.post("/items")
-def create_item(item: str):
-    items.append(item)
-    return item
+@app.post("/get_aircraft_info")
+def get_aircraft_info(request: AircraftRequest):
+    return prop.aircraft(request.aircraft_type)
 
-@app.get("/items/{item_id}")
-def get_item(item_id: int) -> str:
-    item = items[item_id]
-    return item
+@app.post("/get_wrap_initclimb_vs_mean")
+def get_wrap_initclimb_vs_mean(request: AircraftRequest):
+    wrap_model = WRAP(ac=request.aircraft_type)
+    params = wrap_model.initclimb_vs()
+    return params["default"]
 
-@app.post("/remove")
-def remove_items(removal_list: list[str]) -> list[str]:
-    for item in removal_list:
-        while item in items:
-            items.remove(item)
-    return items
+@app.post("/get_wrap_cruise_alt")
+def get_wrap_cruise_alt(request: AircraftRequest):
+    wrap_model = WRAP(ac=request.aircraft_type)
+    params = wrap_model.cruise_alt()
+    return params["default"]
 
-
-# use Invoke-RestMethod to call these things from PS.
+@app.post("/get_wrap_climb_const_vcas_mean")
+def get_wrap_climb_const_vcas_mean(request: AircraftRequest):
+    wrap_model = WRAP(ac=request.aircraft_type)
+    params = wrap_model.climb_const_vcas()
+    return params["default"]
     
-       # example commands:
-       # PS C:\WINDOWS\system32> Invoke-RestMethod -Method 'Post' -Uri http://localhost:8000/remove -ContentType "application/json" -Body '["B738","A320"]'
-       # PS C:\WINDOWS\system32> Invoke-RestMethod -Method 'Post' -Uri http://localhost:8000/items?item=B752
+@app.post("/get_wrap_climb_vs_pre_concas_mean")
+def get_wrap_climb_vs_pre_concas_mean(request: AircraftRequest):
+    wrap_model = WRAP(ac=request.aircraft_type)
+    params = wrap_model.climb_vs_pre_concas()
+    return params["default"]
 
-    
+@app.post("/get_wrap_climb_vs_concas_mean")
+def get_wrap_climb_vs_concas_mean(request: AircraftRequest):
+    wrap_model = WRAP(ac=request.aircraft_type)
+    params = wrap_model.climb_vs_concas()
+    return params["default"]
 
-# use uvicorn main:app --reload to run the API endpoint. make sure you are in the directory of main and in the venv when you do that.
-# enter venv using .\venv\Scripts\activate
+@app.post("/get_wrap_climb_vs_conmach_mean")
+def get_wrap_climb_vs_conmach_mean(request: AircraftRequest):
+    wrap_model = WRAP(ac=request.aircraft_type)
+    params = wrap_model.climb_vs_conmach()
+    return params["default"]

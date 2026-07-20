@@ -1,13 +1,5 @@
-﻿using Microsoft.VisualBasic;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
+﻿using System.Diagnostics;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace FlightRouteGenerator
 {
@@ -22,52 +14,91 @@ namespace FlightRouteGenerator
         private static string HOST_IP = "127.0.0.1";
         private static string HOST_PORT = "8000";
         private static string HOST_SOCKET = $"{HOST_IP}:{HOST_PORT}";
+        private static string HOST_URL = $"http://{HOST_SOCKET}";
         public static async Task Initialise()
         {
             initialisationStarted = true;
 
-            using (pdsProcess = new Process())
+            if (File.Exists("PDS.pid"))
             {
-                pdsProcess.StartInfo.UseShellExecute = false;
-                pdsProcess.StartInfo.FileName = PYTHON_FILE_PATH;
-                pdsProcess.StartInfo.CreateNoWindow = true;
-                pdsProcess.StartInfo.Arguments = $"-m uvicorn main:app --host 127.0.0.1 --port 8000";
-                // start the uvicorn module as a module.
-                // uvicorn is the process that exposes the PDS python script as a fastAPI endpoint
-                // over http.
+                int pdsPID;
 
-                pdsProcess.StartInfo.WorkingDirectory = PDS_FILE_PATH;
-                pdsProcess.StartInfo.RedirectStandardOutput = true;
-                pdsProcess.StartInfo.RedirectStandardError = true;
-
-                pdsProcess.Start();
-
-                bool processAlive = false;
-                client = new HttpClient();
-
-                while (!isInitialised)
+                using (BinaryReader br = new BinaryReader(File.OpenRead("PDS.pid")))
                 {
-                    try
-                    {
-                        HttpResponseMessage response = await client.GetAsync($"http://{HOST_SOCKET}/items");
-                        isInitialised = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.GetType());
-                        Console.WriteLine(ex.Message);
-                    }
-
-                    await Task.Delay(100);
+                    pdsPID = br.ReadInt32();
                 }
+
+                try
+                {
+                    Process.GetProcessById(pdsPID).Kill(true);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Attempted to kill old process, but got error: {ex.Message}");
+                }
+
+                File.Delete("PDS.pid");
             }
+
+            pdsProcess = new Process();
+            pdsProcess.StartInfo.UseShellExecute = false;
+            pdsProcess.StartInfo.FileName = PYTHON_FILE_PATH;
+            pdsProcess.StartInfo.CreateNoWindow = true;
+            pdsProcess.StartInfo.Arguments = $"-m uvicorn main:app --host 127.0.0.1 --port 8000";
+            // start the uvicorn module as a module.
+            // uvicorn is the process that exposes the PDS python script as a fastAPI endpoint
+            // over http.
+
+            pdsProcess.StartInfo.WorkingDirectory = PDS_FILE_PATH;
+            pdsProcess.StartInfo.RedirectStandardOutput = true;
+            pdsProcess.StartInfo.RedirectStandardError = true;
+
+            pdsProcess.Start();
+            using (BinaryWriter bw = new BinaryWriter(File.OpenWrite("PDS.pid")))
+            {
+                bw.Write(pdsProcess.Id);
+            }
+
+            bool processAlive = false;
+            client = new HttpClient();
+
+            while (!isInitialised)
+            {
+                try
+                {
+                    HttpResponseMessage response = await client.GetAsync($"{HOST_URL}");
+                    response.EnsureSuccessStatusCode();
+                    isInitialised = true;
+
+                    using (StreamReader sr = new StreamReader(response.Content.ReadAsStream()))
+                    {
+                        Debug.WriteLine(sr.ReadLine());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.GetType());
+                    Console.WriteLine(ex.Message);
+                }
+
+                await Task.Delay(100);
+            }
+
         }
 
-        public static async Task<string> GetResponse(string urlPath)
+        public static async Task<string> GetResponse(string urlPath, HttpMethod method, string serialisedJson)
         {
             string payload = "";
+            string fullURI = $"{HOST_URL}/{urlPath}";
+            using StringContent jsonContent = new(serialisedJson, Encoding.UTF8, "application/json");
 
-            HttpResponseMessage response = await client.GetAsync($"http://{HOST_SOCKET}/{urlPath}");
+            HttpRequestMessage request = new HttpRequestMessage(method, fullURI)
+            {
+                Content = jsonContent
+            };
+
+            HttpResponseMessage response = await client.SendAsync(request);
+
             HttpContent content = response.Content;
             using (StreamReader sr = new StreamReader(content.ReadAsStream()))
             {

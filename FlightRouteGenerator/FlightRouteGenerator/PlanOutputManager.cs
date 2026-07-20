@@ -21,6 +21,10 @@ namespace FlightRouteGenerator
 
             foreach (RouteLeg leg in route.Legs)
             {
+                if (leg.Airway.isDirect)
+                {
+                    leg.Airway.airwayName = GLOBAL_SETTINGS.DIRECT_FORMAT;
+                }
                 Console.WriteLine($"{leg.Airway.airwayName} {leg.Waypoint.ident} ({leg.Length:F1} nmi) \n---------------");
             }
 
@@ -31,7 +35,7 @@ namespace FlightRouteGenerator
             {
                 if (leg.Airway.isDirect)
                 {
-                    leg.Airway.airwayName = "DCT";
+                    leg.Airway.airwayName = GLOBAL_SETTINGS.DIRECT_FORMAT;
                 }
                 Console.Write($"{leg.Airway.airwayName} {leg.Waypoint.ident} ");
             }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json;
 using System.Threading;
 
 namespace FlightRouteGenerator
@@ -21,16 +22,22 @@ namespace FlightRouteGenerator
             }
             Console.Clear();
 
-            Console.WriteLine(await PerformanceDataService.GetResponse("items/0"));
-
             Console.Write("Welcome to the Flight Route Planner!\nEnter departure airport ICAO code: ");
             string departureInput = Console.ReadLine().ToUpper();
             Console.Write("Enter arrival airport ICAO code: ");
             string arrivalInput = Console.ReadLine().ToUpper();
 
+            Console.Write("Enter aircraft type ICAO code: ");
+            string acftTypeInput = Console.ReadLine().ToUpper();
+
             if (departureInput == arrivalInput)
             {
                 throw new InvalidRouteInputException();
+            }
+
+            if (!AircraftPerformanceAnalyser.SupportedAircraftTypes.Contains(acftTypeInput))
+            {
+                throw new InvalidAircraftTypeInputException();
             }
             AirportRecord departureAirport;
             AirportRecord arrivalAirport;
@@ -98,11 +105,20 @@ namespace FlightRouteGenerator
                 Console.ReadKey();
                 await StartProgram();
             }
+            catch (InvalidAircraftTypeInputException)
+            {
+                Console.WriteLine("\n\nInvalid input.\nOnly enter valid, supported ICAO aircraft types.");
+                Console.WriteLine("Supported aircraft types are:\n");
+
+                Console.WriteLine(string.Join(", ", AircraftPerformanceAnalyser.SupportedAircraftTypes.ToArray()));
+                Console.WriteLine("\nPress any key to restart...");
+                Console.ReadKey();
+                await StartProgram();
+            }
         }
 
         public static async Task Main()
         {
-
             await StartProgram();
 
             Console.WriteLine("\n\nPress any key to exit.");
