@@ -44,7 +44,9 @@ namespace FlightRouteGenerator
                 ZFW = route.Aircraft.OEW + route.Loadsheet.Payload
             };
 
-            int consumedFuel = FlightSimulator.GetFlightFuelConsumption(blockFuelEstimate, route.Loadsheet.ZFW);
+            int consumedFuel = FlightSimulator.GetFlightFuelConsumption(
+                blockFuelEstimate, route.Loadsheet.ZFW, route.Aircraft.ICAOIdent
+                );
 
             throw new NotImplementedException();
         }
