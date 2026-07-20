@@ -53,14 +53,14 @@ namespace FlightRouteGenerator
             string serialisedAircraftRequest = JsonSerializer.Serialize(aircraftRequest);
 
             aircraft.ClimbCAS = (int)Math.Round(
-                MpS_TO_FpM * double.Parse(
+                MpS_TO_KTS * double.Parse(
                     await aircraft.InteractWithPDS(
                         "get_wrap_climb_const_vcas_mean", HttpMethod.Post, serialisedAircraftRequest)
                     )
                 );
 
             aircraft.InitVS = (int)Math.Round(
-                MpS_TO_KTS * double.Parse(
+                MpS_TO_FpM * double.Parse(
                     await aircraft.InteractWithPDS(
                         "get_wrap_initclimb_vs_mean", HttpMethod.Post, serialisedAircraftRequest)
                     )
