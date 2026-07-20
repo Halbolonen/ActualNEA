@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace FlightRouteGenerator
 {
@@ -24,8 +25,17 @@ namespace FlightRouteGenerator
         public int ConstantMach_VS { get; set; }
         // vertical speed during constant Mach, in
         // feet per minute.
+        public struct PassengerLoadRange
+        {
+            public int high { get; set; }
+            public int low { get; set; }
+            public int max { get; set; }
+        }
+        public PassengerLoadRange PassengerLoadLimits { get; set; }
+        public int OEW { get; set; }
+        // Operational Empty Weight, in kilograms
 
-        private async Task<string> InteractWithPDS(string path, HttpMethod httpMethod, string serialisedRequest)
+        private static async Task<string> InteractWithPDS(string path, HttpMethod httpMethod, string serialisedRequest)
         {
             return await PerformanceDataService.GetResponse(path, httpMethod, serialisedRequest);
         }
@@ -52,40 +62,12 @@ namespace FlightRouteGenerator
 
             string serialisedAircraftRequest = JsonSerializer.Serialize(aircraftRequest);
 
-            aircraft.ClimbCAS = (int)Math.Round(
-                MpS_TO_KTS * double.Parse(
-                    await aircraft.InteractWithPDS(
-                        "get_wrap_climb_const_vcas_mean", HttpMethod.Post, serialisedAircraftRequest)
-                    )
+            aircraft.PassengerLoadLimits = JsonSerializer.Deserialize<PassengerLoadRange>(
+                await InteractWithPDS("get_aircraft_passenger_load_range", HttpMethod.Post, serialisedAircraftRequest)
                 );
-
-            aircraft.InitVS = (int)Math.Round(
-                MpS_TO_FpM * double.Parse(
-                    await aircraft.InteractWithPDS(
-                        "get_wrap_initclimb_vs_mean", HttpMethod.Post, serialisedAircraftRequest)
-                    )
-                );
-
-            aircraft.PreConstantCAS_VS = (int)Math.Round(
-                MpS_TO_FpM * double.Parse(
-                    await aircraft.InteractWithPDS(
-                        "get_wrap_climb_vs_pre_concas_mean", HttpMethod.Post, serialisedAircraftRequest)
-                    )
-                );
-
-            aircraft.ConstantCAS_VS = (int)Math.Round(
-                MpS_TO_FpM * double.Parse(
-                    await aircraft.InteractWithPDS(
-                        "get_wrap_climb_vs_concas_mean", HttpMethod.Post, serialisedAircraftRequest)
-                    )
-                );
-
-            aircraft.ConstantMach_VS = (int)Math.Round(
-                MpS_TO_FpM * double.Parse(
-                    await aircraft.InteractWithPDS(
-                        "get_wrap_climb_vs_concas_mean", HttpMethod.Post, serialisedAircraftRequest)
-                    )
-                );
+            aircraft.OEW = int.Parse(JsonSerializer.Deserialize<string>(
+                await InteractWithPDS("get_aircraft_oew", HttpMethod.Post, serialisedAircraftRequest)
+                ));
 
             return aircraft;
         }

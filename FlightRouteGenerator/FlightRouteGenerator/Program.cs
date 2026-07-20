@@ -60,6 +60,8 @@ namespace FlightRouteGenerator
                 route = aStar.GetRouteBetweenAirports(departureAirport, arrivalAirport);
                 route.Aircraft = await Aircraft.CreateAsync(acftTypeInput);
 
+                route = await AircraftPerformanceAnalyser.AddVerticalProfileToRoute(route);
+
                 Console.Clear();
                 Console.WriteLine("Use the menu to select the formats you want your flight plan to be outputted in.\n");
 

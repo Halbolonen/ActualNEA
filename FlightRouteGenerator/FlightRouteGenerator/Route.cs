@@ -17,6 +17,7 @@ namespace FlightRouteGenerator
         public int CruiseAltitude { get; set; }
         // in feet
         public Aircraft Aircraft { get; set; }
+        public LoadsheetInfo Loadsheet { get; set; }
 
         public Route()
         {
