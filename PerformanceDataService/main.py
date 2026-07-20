@@ -33,27 +33,27 @@ def get_aircraft_oew(request: AircraftRequest):
 
 @app.post("/get_climb_init_vcas")
 def get_climb_init_vcas(request: AircraftRequest):
-    wrap = WRAP(AircraftRequest.aircraft_type)
+    wrap = WRAP(request.aircraft_type)
     return wrap.initclimb_vcas()["default"]
 
 @app.post("/get_climb_const_vcas")
 def get_climb_const_vcas(request: AircraftRequest):
-    wrap = WRAP(AircraftRequest.aircraft_type)
+    wrap = WRAP(request.aircraft_type)
     return wrap.climb_const_vcas()["default"]
 
 @app.post("/get_climb_const_mach")
 def get_climb_const_mach(request: AircraftRequest):
-    wrap = WRAP(AircraftRequest.aircraft_type)
+    wrap = WRAP(request.aircraft_type)
     return wrap.climb_const_mach()["default"]
 
-@app.post("get_climb_concas_xover_alt")
+@app.post("/get_climb_concas_xover_alt")
 def get_climb_concas_xover_alt(request: AircraftRequest):
-    wrap = WRAP(AircraftRequest.aircraft_type)
+    wrap = WRAP(request.aircraft_type)
     return wrap.climb_cross_alt_concas()["default"]
 
-@app.post("get_climb_conmach_xover_alt")
+@app.post("/get_climb_conmach_xover_alt")
 def get_climb_conmach_xover_alt(request: AircraftRequest):
-    wrap = WRAP(AircraftRequest.aircraft_type)
+    wrap = WRAP(request.aircraft_type)
     return wrap.climb_cross_alt_conmach()["default"]
 
 @app.post("/get_initclimb_vs")

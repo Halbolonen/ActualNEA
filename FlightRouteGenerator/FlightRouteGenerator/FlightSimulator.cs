@@ -36,27 +36,32 @@ namespace FlightRouteGenerator
 
             double t = t_0 - (altitude / 1000) * ISA_LAPSE_RATE;
 
-            double localMachOne = Math.Sqrt(
+            double localSpeedOfSound = Math.Sqrt(
                 gamma * R * t
             );
+            // https://www.grc.nasa.gov/www/k-12/VirtualAero/BottleRocket/airplane/sound.html
 
-            double P = 101.29 * Math.Pow(((t + 273.1)/288.08), 5.256);
+            double P = p_0 * Math.Pow(t / t_0, 5.256);
+            // TODO: label magic number -5.256
             // static pressure at altitude
 
-            double qc = 101.325 * (Math.Pow(1 + 0.2 * Math.Pow((cas / a_0), 2), 3.5) - 1);
+            double qc = p_0 * (Math.Pow(1 + 0.2 * Math.Pow((cas / a_0), 2), 3.5) - 1);
             // subsonic impact pressure, mach
 
-            double machNumber = Math.Sqrt(5 * Math.Pow(((qc / P) + 1), (1/3.5) - 1));
+            double machNumber = Math.Sqrt(
+                5 * (Math.Pow((qc / P) + 1, 1 / 3.5) - 1)
+            );
             // subsonic mach number
             // https://www.aviationhunt.com/airspeed-conversion-calculator/
 
-            return machNumber * localMachOne;
+            return machNumber * localSpeedOfSound;
         }
 
         public static async Task<int> GetFlightFuelConsumption(int blockFuel, int zfw, string aircraftType)
         {
             const double dt = 1;
             // seconds
+            const double MpS_TO_FpM = 196.85;
             double fuelConsumed;
             // in kilograms
             int verticalSpeed;
@@ -74,19 +79,20 @@ namespace FlightRouteGenerator
 
 
             FlightPhase phaseOfFlight = FlightPhase.Takeoff;
-            verticalSpeed = int.Parse(
+            verticalSpeed = (int)(MpS_TO_FpM * double.Parse(
                 await PerformanceDataService.GetResponse("get_initclimb_vs", HttpMethod.Post, serialisedAircraftInfo
-                )
+                ))
             );
-            // FIXME: convert from m/s to fpm and make int
-
-            cas = int.Parse(
+            Console.WriteLine(PerformanceDataService.isInitialised);
+            cas = (int)double.Parse(
                 await PerformanceDataService.GetResponse("get_climb_init_vcas", HttpMethod.Post, serialisedAircraftInfo
                 )
             );
+            Console.WriteLine("fgblkdfj");
+            Console.WriteLine(cas);
             double tas = CAStoTAS(5000, cas);
             Console.WriteLine(tas);
-            throw new NotImplementedException();
+            return 0;
         }
     }
 }

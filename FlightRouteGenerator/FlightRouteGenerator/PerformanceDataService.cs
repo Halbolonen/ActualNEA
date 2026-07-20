@@ -51,7 +51,7 @@ namespace FlightRouteGenerator
 
             pdsProcess.StartInfo.WorkingDirectory = PDS_FILE_PATH;
             pdsProcess.StartInfo.RedirectStandardOutput = true;
-            pdsProcess.StartInfo.RedirectStandardError = true;
+            pdsProcess.StartInfo.RedirectStandardError = false;
 
             pdsProcess.Start();
             using (BinaryWriter bw = new BinaryWriter(File.OpenWrite("PDS.pid")))
@@ -90,6 +90,7 @@ namespace FlightRouteGenerator
         {
             string payload = "";
             string fullURI = $"{HOST_URL}/{urlPath}";
+            Console.WriteLine(urlPath);
             using StringContent jsonContent = new(serialisedJson, Encoding.UTF8, "application/json");
 
             HttpRequestMessage request = new HttpRequestMessage(method, fullURI)

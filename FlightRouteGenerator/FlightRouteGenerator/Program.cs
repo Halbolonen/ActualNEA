@@ -62,6 +62,8 @@ namespace FlightRouteGenerator
 
                 route = await AircraftPerformanceAnalyser.AddVerticalProfileToRoute(route);
 
+                Console.WriteLine("!bp");
+
                 Console.Clear();
                 Console.WriteLine("Use the menu to select the formats you want your flight plan to be outputted in.\n");
 

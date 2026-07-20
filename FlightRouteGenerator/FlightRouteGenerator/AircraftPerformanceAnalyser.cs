@@ -43,7 +43,7 @@ namespace FlightRouteGenerator
                 blockFuelEstimate, route.Loadsheet.ZFW, route.Aircraft.ICAOIdent
                 );
 
-            throw new NotImplementedException();
+            return route;
         }
 
         static AircraftPerformanceAnalyser()
