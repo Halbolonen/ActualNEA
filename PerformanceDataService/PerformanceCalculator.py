@@ -16,7 +16,6 @@ class FlightRequest(BaseModel):
     acft_request: AircraftRequest
     zfw: int
     cruise_altitude: int
-    initial_fuel: int
 
 class FuelFlowParameters(BaseModel):
     mass: int

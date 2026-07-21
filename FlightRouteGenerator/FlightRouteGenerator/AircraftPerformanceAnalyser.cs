@@ -43,6 +43,8 @@ namespace FlightRouteGenerator
                 route
                 );
 
+            Console.WriteLine($"remaining fuel: {consumedFuel} kg");
+
             return route;
         }
 

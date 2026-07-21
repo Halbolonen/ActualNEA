@@ -100,6 +100,29 @@ namespace FlightRouteGenerator
 
         public static async Task<int> GetFlightFuelConsumption(Route route)
         {
+            PDS_FlightRequest flightRequest = new PDS_FlightRequest
+            {
+                DepartureAirportAltitude = route.DepartureAirport.altitude,
+                ArrivalAirportAltitude = route.ArrivalAirport.altitude,
+                AircraftRequest = new PDS_AircraftRequest
+                {
+                    aircraft_type = route.Aircraft.ICAOIdent
+                },
+                ZFW = route.Loadsheet.ZFW,
+                CruiseAltitude = route.CruiseAltitude
+            };
+
+            string serialisedRequest = JsonSerializer.Serialize(flightRequest);
+
+            return (int)Math.Round(
+                double.Parse(
+                    await PerformanceDataService.GetCalculation("get_flight_fuel_consumption", HttpMethod.Post, serialisedRequest)
+                    )
+                );
+        }
+
+        /*public static async Task<int> GetFlightFuelConsumption(Route route)
+        {
             const double M_TO_NMI = 0.000539957;
             const int dt = 10;
             // seconds
@@ -269,5 +292,6 @@ namespace FlightRouteGenerator
 
             return 0;
         }
+    */
     }
 }

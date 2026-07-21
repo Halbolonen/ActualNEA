@@ -67,7 +67,7 @@ def get_climb_conmach_xover_alt(request: AircraftRequest):
     return wrap.climb_cross_alt_conmach()["default"]
 
 @api.post("/get_initclimb_vs")
-def get_wrap_initclimb_vs_mean(request: AircraftRequest):
+def get_initclimb_vs(request: AircraftRequest):
     wrap_model = WRAP(ac=request.aircraft_type)
     params = wrap_model.initclimb_vs()
     return params["default"]
@@ -126,7 +126,7 @@ def get_descent_xover_alt_const_cas(request: AircraftRequest):
     params = wrap_model.descent_cross_alt_concas()
     return params["default"]
 
-@api.post("/get_finalapi_vcas")
+@api.post("/get_finalapp_vcas")
 def get_finalapp_vcas(request: AircraftRequest):
     wrap_model = WRAP(ac=request.aircraft_type)
     params = wrap_model.finalapp_vcas()
