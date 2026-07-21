@@ -74,6 +74,10 @@ namespace FlightRouteGenerator
         public int DescentXOverAltConstCAS { get; set; }
         // altitude in the descent when aircraft stops assuming
         // constant Calibrated AirSpeed in m
+        public int FinalApproachCAS { get; set; }
+        // Calibrated AirSpeed on final approach in m/s
+        public int FinalApproachVS { get; set; }
+        // vertical speed on final approach in m/s
 
         public Aircraft(string inICAOIdent)
         {
@@ -135,6 +139,8 @@ namespace FlightRouteGenerator
             aircraft.DescentConstCASVS = await aircraft.GetIntDatapointFromPDS("get_descent_vs_const_cas");
             aircraft.DescentXOverAltConstMach = 1000 * await aircraft.GetIntDatapointFromPDS("get_descent_xover_alt_const_mach");
             aircraft.DescentXOverAltConstCAS = 1000 * await aircraft.GetIntDatapointFromPDS("get_descent_xover_alt_const_cas");
+            aircraft.FinalApproachCAS = await aircraft.GetIntDatapointFromPDS("get_finalapp_vcas");
+            aircraft.FinalApproachVS = await aircraft.GetIntDatapointFromPDS("get_finalapp_vs");
             
             return aircraft;
         }

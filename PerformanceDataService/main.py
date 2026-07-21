@@ -153,7 +153,7 @@ def get_enroute_fuelflow(ff_params: FuelFlowParameters):
 
     return flow
 
-@app.post("/get_climb_fuelflow")
+@app.post("/get_fuelflow")
 def get_climb_fuelflow(ff_params: FuelFlowParameters):
     g = 9.80665
     MpS_TO_KTS = 1.94384
