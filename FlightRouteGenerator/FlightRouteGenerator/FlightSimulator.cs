@@ -109,7 +109,8 @@ namespace FlightRouteGenerator
                     aircraft_type = route.Aircraft.ICAOIdent
                 },
                 ZFW = route.Loadsheet.ZFW,
-                CruiseAltitude = route.CruiseAltitude
+                CruiseAltitude = route.CruiseAltitude,
+                RouteTotalDistance = route.TotalDistance
             };
 
             string serialisedRequest = JsonSerializer.Serialize(flightRequest);
