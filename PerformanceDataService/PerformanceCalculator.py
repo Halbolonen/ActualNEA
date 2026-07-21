@@ -12,9 +12,11 @@ class AircraftRequest(BaseModel):
 
 class FlightRequest(BaseModel):
     departure_arprt_alt: int
+    arrival_arprt_alt: int
     acft_request: AircraftRequest
     zfw: int
     cruise_altitude: int
+    initial_fuel: int
 
 class FuelFlowParameters(BaseModel):
     mass: int
@@ -112,12 +114,18 @@ def get_flight_fuel_consumption(flight_request: FlightRequest):
     cas = api.get_initclimb_vs(flight_request.acft_request)
     max_fuel_capacity = api.get_aircraft_fuel_capacity(flight_request.acft_request)
 
-    constant_cas_climb_vs = api.get_climb_vs_const_cas()
-    constant_mach_climb_vs = api.get_climb_vs_const_mach()
-    constant_climb_mach = api.get_climb_const_mach()
-    descent_const_mach = api.get_descent_const_mach()
-    descent_const_cas = api.get_descent_const_vcas()
-    descent_const_mach_vs = api.get_descent_vs_const_mach()
+    constant_cas_climb_vs = api.get_climb_vs_const_cas(flight_request.acft_request)
+    constant_mach_climb_vs = api.get_climb_vs_const_mach(flight_request.acft_request)
+    constant_climb_mach = api.get_climb_const_mach(flight_request.acft_request)
+    descent_const_mach = api.get_descent_const_mach(flight_request.acft_request)
+    descent_const_cas = api.get_descent_const_vcas(flight_request.acft_request)
+    descent_const_mach_vs = api.get_descent_vs_const_mach(flight_request.acft_request)
+    descent_xover_alt_const_mach = api.get_descent_xover_alt_const_mach(flight_request.acft_request)
+    descent_xover_alt_const_cas = api.get_descent_vs_const_cas(flight_request.acft_request)
+    descent_const_cas_vs = api.get_descent_vs_const_cas(flight_request.acft_request)
+    finalapproach_cas = api.get_finalapp_vcas(flight_request.acft_request)
+    finalapproach_vs = api.get_finalapp_vs(flight_request.acft_request)
+    cruise_mach = api.get_cruise_mach(flight_request.acft_request)
 
     ff_params: FuelFlowParameters = FuelFlowParameters()
     ff_params.alt = flight_request.departure_arprt_alt
@@ -147,7 +155,7 @@ def get_flight_fuel_consumption(flight_request: FlightRequest):
             
     # initial vertical speed & cas
 
-    while ff_params.alt < constant_cas_climb_vs:
+    while (ff_params.alt < constant_cas_climb_vs):
         ff_params.tas = round(cas_to_tas(ff_params.alt, cas))
         run_simulation_tick()
     
@@ -165,3 +173,60 @@ def get_flight_fuel_consumption(flight_request: FlightRequest):
     # entering constant mach stage of descent
     mach = descent_const_mach
     descent_ff_params.vs = descent_const_mach_vs
+    while (descent_ff_params.alt > descent_xover_alt_const_cas):
+        descent_ff_params.tas = round(cas_to_tas(descent_ff_params.alt, cas))
+        run_simulation_tick()
+    
+    # entering constant CAS stage of descent
+    cas = descent_const_cas
+    descent_ff_params.vs = descent_const_cas_vs
+    while (descent_ff_params.alt > descent_xover_alt_const_cas):
+        descent_ff_params.tas = round(cas_to_tas(descent_ff_params.alt, cas))
+        run_simulation_tick()
+
+    # entering final approach stage of descent
+    cas = finalapproach_cas
+    descent_ff_params.vs = finalapproach_vs
+    while (descent_ff_params.alt > flight_request.arrival_arprt_alt):
+        ff_params.tas = round(cas_to_tas(descent_ff_params.alt, cas))
+        run_simulation_tick()
+
+    # entering cruise
+    ff_params.vs = 0
+    mach = cruise_mach
+    phase_of_flight = FlightPhase.CRUISE
+    ff_params.alt = flight_request.cruise_altitude
+    ff_params.tas = round(mach_to_tas(ff_params.alt, mach))
+
+    while (distance_travelled < climb_and_cruise_track_length):
+        run_simulation_tick();
+
+    # simulating descent stages for real this time
+    phase_of_flight = FlightPhase.DESCENT
+    # entering constant mach stage of descent
+    mach = descent_const_mach
+    ff_params.vs = descent_const_mach_vs
+    while (ff_params.alt > descent_xover_alt_const_cas):
+        ff_params.tas = round(cas_to_tas(ff_params.alt, cas))
+        run_simulation_tick()
+    
+    # entering constant CAS stage of descent
+    cas = descent_const_cas
+    ff_params.vs = descent_const_cas_vs
+    while (ff_params.alt > descent_xover_alt_const_cas):
+        ff_params.tas = round(cas_to_tas(ff_params.alt, cas))
+        run_simulation_tick()
+
+    # entering final approach stage of descent
+    cas = finalapproach_cas
+    ff_params.vs = finalapproach_vs
+    while (ff_params.alt > flight_request.arrival_arprt_alt):
+        ff_params.tas = round(cas_to_tas(ff_params.alt, cas))
+        run_simulation_tick()
+
+    remaining_fuel = round(remaining_fuel)
+
+    return remaining_fuel
+
+    # TODO: use newton-raphson to make this find an optimal fuel load
+    # (or error correction if newton-raphson turns out to be too complex)

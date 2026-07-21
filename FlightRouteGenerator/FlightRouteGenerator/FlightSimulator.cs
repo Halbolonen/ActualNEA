@@ -234,7 +234,6 @@ namespace FlightRouteGenerator
             }
 
             // simulating descent stages for real this time
-            phaseOfFlight = FlightPhase.Descent;
             // entering constant mach stage of descent
             phaseOfFlight = FlightPhase.Descent;
             mach = route.Aircraft.DescentConstMach;
