@@ -50,8 +50,8 @@ namespace FlightRouteGenerator
             // over http.
 
             pdsProcess.StartInfo.WorkingDirectory = PDS_FILE_PATH;
-            pdsProcess.StartInfo.RedirectStandardOutput = true;
-            pdsProcess.StartInfo.RedirectStandardError = true;
+            pdsProcess.StartInfo.RedirectStandardOutput = false;
+            pdsProcess.StartInfo.RedirectStandardError = false;
 
             pdsProcess.Start();
             using (BinaryWriter bw = new BinaryWriter(File.OpenWrite("PDS.pid")))

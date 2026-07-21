@@ -57,9 +57,10 @@ namespace FlightRouteGenerator
             return machNumber * localSpeedOfSound;
         }
 
-        private static int ComputeGrossMass(int fuelMass, LoadsheetInfo loadsheet)
+        private static int ComputeGrossMass(double fuelMass, Route route)
         {
-            return fuelMass + loadsheet.Payload;
+            int fuelMassInt = (int)Math.Round(Math.Clamp(fuelMass, 0, route.Aircraft.MaxFuelCapacity));
+            return fuelMassInt + route.Loadsheet.ZFW;
         }
 
         private static async Task<double> GetFuelFlow(PDS_FuelFlowParameters ffParams)
@@ -108,15 +109,17 @@ namespace FlightRouteGenerator
                 alt = altitude,
                 vs = verticalSpeed,
                 tas = tas,
-                mass = ComputeGrossMass((int)Math.Round(Math.Clamp(remainingFuel, 0, remainingFuel)), route.Loadsheet),
+                mass = ComputeGrossMass((int)Math.Round(Math.Clamp(remainingFuel, 0, route.Aircraft.MaxFuelCapacity)), route),
                 aircraft_type = route.Aircraft.ICAOIdent
             };
+            Console.WriteLine($"ffParams mass: {ffParams.mass}");
             while (altitude < route.Aircraft.ClimbXOVerAltConstantCAS)
             {
                 remainingFuel -= await GetFuelFlow(ffParams);
                 altitude += verticalSpeed * dt;
 
                 ffParams.alt = altitude;
+                ffParams.mass = ComputeGrossMass(remainingFuel, route);
             }
 
             Console.WriteLine($"remaining fuel after climb: {remainingFuel} kg");
