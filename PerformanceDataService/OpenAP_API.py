@@ -18,6 +18,9 @@ class FuelFlowParameters(BaseModel):
     dT: int
     aircraft_type: str
 
+drag_models = {}
+fuelflow_models = {}
+
 @api.get("/")
 def root():
     return "PDS API ONLINE"
@@ -149,12 +152,22 @@ def get_enroute_fuelflow(ff_params: FuelFlowParameters):
         acc=ff_params.acc,
         dT=ff_params.dT
     )
-    print(ff_params.mass, ff_params.alt, flow)
 
     return flow
 
+def get_drag_model(acft_type: str):
+    if acft_type not in drag_models:
+        drag_models[acft_type] = Drag(acft_type)
+    return drag_models[acft_type]
+
+def get_fuelflow_model(acft_type: str):
+    if acft_type not in fuelflow_models:
+        fuelflow_models[acft_type] = FuelFlow(acft_type)
+    return fuelflow_models[acft_type]
+
 @api.post("/get_fuelflow")
-def get_fuelflow(ff_params: FuelFlowParameters):
+def get_fuelflow(in_ff_params: FuelFlowParameters):
+    ff_params = in_ff_params.model_copy(deep=True)
     g = 9.80665
     MpS_TO_KTS = 1.94384
     M_TO_FT = 3.28084
@@ -167,12 +180,12 @@ def get_fuelflow(ff_params: FuelFlowParameters):
     ff_params.tas = ff_params.tas * MpS_TO_KTS
     ff_params.alt = ff_params.alt * M_TO_FT
     ff_params.vs = ff_params.vs * MpS_TO_FpM
-    drag_model = Drag(ff_params.aircraft_type)
+    drag_model = get_drag_model(ff_params.aircraft_type)
     climb_drag = drag_model.clean(ff_params.mass, ff_params.tas, ff_params.alt, ff_params.vs)
     weight_component_against_thrust = ff_params.mass * g * math.sin(angle_of_climb)
     climb_thrust = climb_drag + weight_component_against_thrust
 
-    fuelflow_model = FuelFlow(ff_params.aircraft_type)
+    fuelflow_model = get_fuelflow_model(ff_params.aircraft_type)
     flow = fuelflow_model.at_thrust(
         total_ac_thrust=climb_thrust
     )

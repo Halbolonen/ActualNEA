@@ -91,7 +91,6 @@ def mach_to_tas(altitude: float, machNumber: float):
     return machNumber * localSpeedOfSound
 
 def compute_gross_mass(fuel_mass: float, max_fuel_capacity: int, zfw: int):
-    print("fm",fuel_mass)
     fuel_mass_int: int = round(clip(fuel_mass, 0, max_fuel_capacity))
     return fuel_mass_int + zfw
 
@@ -124,20 +123,19 @@ def get_flight_fuel_consumption(flight_request: FlightRequest):
     descent_const_cas = api.get_descent_const_vcas(flight_request.acft_request)
     descent_const_mach_vs = api.get_descent_vs_const_mach(flight_request.acft_request)
     descent_xover_alt_const_mach = 1000 * api.get_descent_xover_alt_const_mach(flight_request.acft_request)
-    descent_xover_alt_const_cas = 1000 * api.get_descent_vs_const_cas(flight_request.acft_request)
+    descent_xover_alt_const_cas = 1000 * api.get_descent_xover_alt_const_cas(flight_request.acft_request)
     descent_const_cas_vs = api.get_descent_vs_const_cas(flight_request.acft_request)
     finalapproach_cas = api.get_finalapp_vcas(flight_request.acft_request)
     finalapproach_vs = api.get_finalapp_vs(flight_request.acft_request)
     cruise_mach = api.get_cruise_mach(flight_request.acft_request)
 
-    ff_params: FuelFlowParameters = FuelFlowParameters(
+    ff_params = FuelFlowParameters(
         alt=flight_request.departure_arprt_alt,
         vs=api.get_initclimb_vs(flight_request.acft_request),
         mass=compute_gross_mass(remaining_fuel, max_fuel_capacity, flight_request.zfw),
         aircraft_type=flight_request.acft_request.aircraft_type,
         tas = cas_to_tas(flight_request.departure_arprt_alt, cas)
     )
-    print("init",ff_params.vs)
     def run_simulation_tick():
         nonlocal remaining_fuel, distance_travelled, descent_track_length
         flow: float
@@ -150,7 +148,6 @@ def get_flight_fuel_consumption(flight_request: FlightRequest):
                 descent_ff_params.alt += descent_ff_params.vs * dt
                 return
             case _:
-                print(ff_params)
                 angle_of_climb = math.asin(ff_params.vs / ff_params.tas)
                 flow = api.get_fuelflow(ff_params)
 
@@ -163,23 +160,21 @@ def get_flight_fuel_consumption(flight_request: FlightRequest):
                 return
             
     # initial vertical speed & cas
-
     while (ff_params.alt < climb_xover_alt_const_cas):
-        ff_params.tas = round(cas_to_tas(ff_params.alt, cas))
+        ff_params.tas = cas_to_tas(ff_params.alt, cas)
         run_simulation_tick()
 
     # entering constant cas climb
     ff_params.vs = constant_cas_climb_vs
     while (ff_params.alt < climb_xover_alt_const_mach):
-        ff_params.tas = round(cas_to_tas(ff_params.alt, cas))
+        ff_params.tas = cas_to_tas(ff_params.alt, cas)
         run_simulation_tick()
     
     # entering constant mach climb
     ff_params.vs = constant_mach_climb_vs
     mach = constant_climb_mach
-    print("cmach",ff_params.vs)
     while (ff_params.alt < flight_request.cruise_altitude):
-        ff_params.tas = round(mach_to_tas(ff_params.alt, mach))
+        ff_params.tas = mach_to_tas(ff_params.alt, mach)
         run_simulation_tick()
     
     # getting descent track length before simulating cruise
@@ -188,9 +183,8 @@ def get_flight_fuel_consumption(flight_request: FlightRequest):
     # entering constant mach stage of descent
     mach = descent_const_mach
     descent_ff_params.vs = descent_const_mach_vs
-    print("descent cmach",descent_ff_params.vs)
-    while (descent_ff_params.alt > descent_xover_alt_const_cas):
-        descent_ff_params.tas = round(cas_to_tas(descent_ff_params.alt, cas))
+    while (descent_ff_params.alt > descent_xover_alt_const_mach):
+        descent_ff_params.tas = mach_to_tas(descent_ff_params.alt, mach)
         run_simulation_tick()
     
     # entering constant CAS stage of descent
@@ -224,7 +218,7 @@ def get_flight_fuel_consumption(flight_request: FlightRequest):
     # entering constant mach stage of descent
     mach = descent_const_mach
     ff_params.vs = descent_const_mach_vs
-    while (ff_params.alt > descent_xover_alt_const_cas):
+    while (ff_params.alt > descent_xover_alt_const_mach):
         ff_params.tas = round(cas_to_tas(ff_params.alt, cas))
         run_simulation_tick()
     

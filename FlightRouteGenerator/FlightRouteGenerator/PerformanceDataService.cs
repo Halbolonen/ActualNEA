@@ -50,7 +50,7 @@ namespace FlightRouteGenerator
             }
 
             pdapiProcess = new Process();
-            pdapiProcess.StartInfo.UseShellExecute = true;
+            pdapiProcess.StartInfo.UseShellExecute = false;
             pdapiProcess.StartInfo.FileName = PYTHON_FILE_PATH;
             pdapiProcess.StartInfo.CreateNoWindow = true;
             pdapiProcess.StartInfo.Arguments = $"-m uvicorn OpenAP_API:api --host 127.0.0.1 --port 8000";
@@ -59,7 +59,7 @@ namespace FlightRouteGenerator
             // over http.
 
             pdcalcProcess = new Process();
-            pdcalcProcess.StartInfo.UseShellExecute = true;
+            pdcalcProcess.StartInfo.UseShellExecute = false;
             pdcalcProcess.StartInfo.FileName = PYTHON_FILE_PATH;
             pdcalcProcess.StartInfo.CreateNoWindow = true;
             pdcalcProcess.StartInfo.Arguments = $"-m uvicorn PerformanceCalculator:performance_calculator --host 127.0.0.1 --port 9000";
