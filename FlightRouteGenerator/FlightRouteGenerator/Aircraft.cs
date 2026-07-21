@@ -8,10 +8,6 @@ namespace FlightRouteGenerator
         public string ICAOIdent { get; set; }
         public int TakeoffWeight { get; set; }
         // in kilograms
-        public int CruiseFlightLevel { get; set; }
-        // in hundreds of feet
-        public double CruiseMach { get; set; }
-        // in mach
         public int ClimbCAS { get; set; }
         // Climb Calibrated AirSpeed, in knots
         public int InitVS { get; set; }
@@ -58,6 +54,26 @@ namespace FlightRouteGenerator
         public double ConstantMachClimbMach { get; set; }
         // mach number at the point in the climb at which
         // it is constant.
+        public double CruiseMach { get; set; }
+        // mach number the aircraft uses in cruise
+        public double DescentConstMach { get; set; }
+        // mach number the aircraft uses during the phase of
+        // descent where it is constant
+        public int DescentConstMachVS { get; set; }
+        // vertical speed the aircraft uses during the phase
+        // of descent where mach number is constant
+        public int DescentConstCAS { get; set; }
+        // Calibrated AirSpeed the aircraft uses during the
+        // phase of descent where CAS is constant
+        public int DescentConstCASVS { get; set; }
+        // vertical speed the aircraft uses during the
+        // phase of descent where CAS is constant
+        public int DescentXOverAltConstMach { get; set; }
+        // altitude in the descent when aircraft stops assuming
+        // constant mach number in m
+        public int DescentXOverAltConstCAS { get; set; }
+        // altitude in the descent when aircraft stops assuming
+        // constant Calibrated AirSpeed in m
 
         public Aircraft(string inICAOIdent)
         {
@@ -75,6 +91,11 @@ namespace FlightRouteGenerator
                 );
 
             return datapoint;
+        }
+
+        private async Task<double> GetDoubleDatapointFromPDS(string path)
+        {
+            return double.Parse(await PerformanceDataService.GetResponse(path, HttpMethod.Post, SerialisedAircraftInfo));
         }
 
         public static async Task<Aircraft> CreateAsync(string inICAOIdent)
@@ -100,9 +121,20 @@ namespace FlightRouteGenerator
             aircraft.OEW = await aircraft.GetIntDatapointFromPDS("get_aircraft_oew");
             aircraft.MaxFuelCapacity = await aircraft.GetIntDatapointFromPDS("get_aircraft_fuel_capacity");
             aircraft.InitialClimbVS = await aircraft.GetIntDatapointFromPDS("get_initclimb_vs");
+            aircraft.InitialClimbCAS = await aircraft.GetIntDatapointFromPDS("get_climb_init_vcas");
             aircraft.ConstantCASClimbVS = await aircraft.GetIntDatapointFromPDS("get_climb_vs_const_cas");
+            aircraft.ConstantCASClimbCAS = await aircraft.GetIntDatapointFromPDS("get_climb_const_vcas");
+            aircraft.ConstantMachClimbMach = await aircraft.GetDoubleDatapointFromPDS("get_climb_const_mach");
+            aircraft.ConstantMachClimbVS = await aircraft.GetIntDatapointFromPDS("get_climb_vs_const_mach");
             aircraft.ClimbXOVerAltConstantCAS = 1000 * await aircraft.GetIntDatapointFromPDS("get_climb_concas_xover_alt");
             aircraft.ClimbXOverAltConstantMach = 1000 * await aircraft.GetIntDatapointFromPDS("get_climb_conmach_xover_alt");
+            aircraft.CruiseMach = await aircraft.GetDoubleDatapointFromPDS("get_cruise_mach");
+            aircraft.DescentConstMach = await aircraft.GetDoubleDatapointFromPDS("get_descent_const_mach");
+            aircraft.DescentConstMachVS = await aircraft.GetIntDatapointFromPDS("get_descent_vs_const_mach");
+            aircraft.DescentConstCAS = await aircraft.GetIntDatapointFromPDS("get_descent_const_vcas");
+            aircraft.DescentConstCASVS = await aircraft.GetIntDatapointFromPDS("get_descent_vs_const_cas");
+            aircraft.DescentXOverAltConstMach = 1000 * await aircraft.GetIntDatapointFromPDS("get_descent_xover_alt_const_mach");
+            aircraft.DescentXOverAltConstCAS = 1000 * await aircraft.GetIntDatapointFromPDS("get_descent_xover_alt_const_cas");
             
             return aircraft;
         }

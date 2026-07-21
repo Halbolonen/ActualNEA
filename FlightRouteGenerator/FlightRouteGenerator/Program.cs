@@ -60,7 +60,14 @@ namespace FlightRouteGenerator
                 route = aStar.GetRouteBetweenAirports(departureAirport, arrivalAirport);
                 route.Aircraft = await Aircraft.CreateAsync(acftTypeInput);
 
-                route = await AircraftPerformanceAnalyser.AddVerticalProfileToRoute(route);
+                Route ogRoute = route;
+
+                for (int i = 0; i < 5; i++)
+                {
+                    route = await AircraftPerformanceAnalyser.AddVerticalProfileToRoute(ogRoute);
+                }
+
+                //route = await AircraftPerformanceAnalyser.AddVerticalProfileToRoute(route);
 
                 Console.WriteLine("!bp");
 
