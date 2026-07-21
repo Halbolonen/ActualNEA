@@ -2,10 +2,20 @@ from fastapi import FastAPI
 from openap import prop
 from openap.kinematic import WRAP
 from pydantic import BaseModel
+from openap import FuelFlow
 
 app = FastAPI()
 
 class AircraftRequest(BaseModel):
+    aircraft_type: str
+
+class FuelFlowParameters(BaseModel):
+    mass: int
+    tas: int
+    alt: int
+    vs: int
+    acc: int
+    dT: int
     aircraft_type: str
 
 @app.get("/")
@@ -62,14 +72,28 @@ def get_wrap_initclimb_vs_mean(request: AircraftRequest):
     params = wrap_model.initclimb_vs()
     return params["default"]
 
-@app.post("/get_wrap_climb_vs_const_cas")
-def get_wrap_climb_vs_const_cas(request: AircraftRequest):
+@app.post("/get_climb_vs_const_cas")
+def get_climb_vs_const_cas(request: AircraftRequest):
     wrap_model = WRAP(ac=request.aircraft_type)
     params = wrap_model.climb_vs_concas()
     return params["default"]
 
-@app.post("/get_wrap_climb_vs_const_mach")
-def get_wrap_climb_vs_const_mach(request: AircraftRequest):
+@app.post("/get_climb_vs_const_mach")
+def get_climb_vs_const_mach(request: AircraftRequest):
     wrap_model = WRAP(ac=request.aircraft_type)
     params = wrap_model.climb_vs_conmach()
     return params["default"]
+
+@app.post("/get_enroute_fuelflow")
+def get_enroute_fuelflow(ff_params: FuelFlowParameters):
+    fuel_flow = FuelFlow(ff_params.aircraft_type)
+    flow = fuel_flow.enroute(
+        mass=ff_params.mass,
+        tas=ff_params.tas,
+        alt=ff_params.alt,
+        vs=ff_params.vs,
+        acc=ff_params.acc,
+        dT=ff_params.dT
+    )
+
+    return flow

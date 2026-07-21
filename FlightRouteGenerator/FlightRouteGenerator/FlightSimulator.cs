@@ -57,11 +57,30 @@ namespace FlightRouteGenerator
             return machNumber * localSpeedOfSound;
         }
 
+        private static int ComputeGrossMass(int fuelMass, LoadsheetInfo loadsheet)
+        {
+            return fuelMass + loadsheet.Payload;
+        }
+
+        private static async Task<double> GetFuelFlow(PDS_FuelFlowParameters ffParams)
+        {
+            string serialisedFFParams = JsonSerializer.Serialize(ffParams);
+
+            double fuelFlow = double.Parse(
+                await PerformanceDataService.GetResponse("get_enroute_fuelflow", HttpMethod.Post, serialisedFFParams
+                )
+            );
+
+            return fuelFlow;
+        }
+
         public static async Task<int> GetFlightFuelConsumption(Route route)
         {
-            const double dt = 1;
+
+            const int dt = 1;
             // seconds
-            const double MpS_TO_FpM = 196.85;
+            //const double MpS_TO_FpM = 196.85;
+            // m/s to ft/m conversion constant
             double fuelConsumed;
             // in kilograms
             int verticalSpeed;
@@ -73,28 +92,35 @@ namespace FlightRouteGenerator
             int tas;
             // True AirSpeed, in metres per second
             int altitude = route.DepartureAirport.altitude;
-            Console.WriteLine(altitude);
             // aircraft altitude, in metres
-            string serialisedAircraftInfo = JsonSerializer.Serialize(
-                new PDS_AircraftRequest
-                {
-                    aircraft_type = route.Aircraft.ICAOIdent
-                }
-            );
-
             int blockFuelEstimate = route.Aircraft.MaxFuelCapacity / 2;
-
+            double remainingFuel = blockFuelEstimate;
+            Console.WriteLine($"remaining fuel before climb: {remainingFuel} kg");
 
             FlightPhase phaseOfFlight = FlightPhase.Takeoff;
-            verticalSpeed = (int)(MpS_TO_FpM * double.Parse(
-                await PerformanceDataService.GetResponse("get_initclimb_vs", HttpMethod.Post, serialisedAircraftInfo
-                ))
-            );
-            Console.WriteLine(PerformanceDataService.isInitialised);
-            cas = (int)double.Parse(
-                await PerformanceDataService.GetResponse("get_climb_init_vcas", HttpMethod.Post, serialisedAircraftInfo
-                )
-            );
+            verticalSpeed = route.Aircraft.InitialClimbVS;
+            cas = route.Aircraft.InitialClimbCAS;
+            tas = (int)Math.Round(CAStoTAS(altitude, cas));
+
+            PDS_FuelFlowParameters ffParams = new PDS_FuelFlowParameters
+            {
+                dT = dt,
+                alt = altitude,
+                vs = verticalSpeed,
+                tas = tas,
+                mass = ComputeGrossMass((int)Math.Round(Math.Clamp(remainingFuel, 0, remainingFuel)), route.Loadsheet),
+                aircraft_type = route.Aircraft.ICAOIdent
+            };
+            while (altitude < route.Aircraft.ClimbXOVerAltConstantCAS)
+            {
+                remainingFuel -= await GetFuelFlow(ffParams);
+                altitude += verticalSpeed * dt;
+
+                ffParams.alt = altitude;
+            }
+
+            Console.WriteLine($"remaining fuel after climb: {remainingFuel} kg");
+
             return 0;
         }
     }
