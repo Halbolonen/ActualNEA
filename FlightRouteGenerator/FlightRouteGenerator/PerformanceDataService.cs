@@ -44,7 +44,7 @@ namespace FlightRouteGenerator
             pdsProcess.StartInfo.UseShellExecute = false;
             pdsProcess.StartInfo.FileName = PYTHON_FILE_PATH;
             pdsProcess.StartInfo.CreateNoWindow = true;
-            pdsProcess.StartInfo.Arguments = $"-m uvicorn main:app --host 127.0.0.1 --port 8000";
+            pdsProcess.StartInfo.Arguments = $"-m uvicorn PerformanceAPI:app --host 127.0.0.1 --port 8000";
             // start the uvicorn module as a module.
             // uvicorn is the process that exposes the PDS python script as a fastAPI endpoint
             // over http.

@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 namespace FlightRouteGenerator
 {
@@ -10,7 +11,8 @@ namespace FlightRouteGenerator
             Climb,
             Cruise,
             Descent,
-            FinalApproach
+            FinalApproach,
+            DescentTrackLengthComputation
         }
 
         public static double CAStoTAS(double altitude, double cas)
@@ -99,7 +101,7 @@ namespace FlightRouteGenerator
         public static async Task<int> GetFlightFuelConsumption(Route route)
         {
             const double M_TO_NMI = 0.000539957;
-            const int dt = 1;
+            const int dt = 10;
             // seconds
             int cas;
             // Calibrated AirSpeed, in metres/second.
@@ -113,8 +115,10 @@ namespace FlightRouteGenerator
             // in nmi
             double climbAndCruiseTrackLength;
             // in nmi
-            int blockFuelEstimate = route.Aircraft.MaxFuelCapacity / 2;
+            //int blockFuelEstimate = route.Aircraft.MaxFuelCapacity / 2;
+            int blockFuelEstimate = 9050;
             double remainingFuel = blockFuelEstimate;
+            PDS_FuelFlowParameters descentFFParams = new PDS_FuelFlowParameters();
             Console.WriteLine($"remaining fuel before flight: {remainingFuel} kg");
 
             FlightPhase phaseOfFlight = FlightPhase.Climb;
@@ -130,29 +134,28 @@ namespace FlightRouteGenerator
 
             async Task RunSimulationTick()
             {
-                ffParams.tas = (int)Math.Round(CAStoTAS(ffParams.alt, cas));
-                double flow = await GetFuelFlow(ffParams);
-
-                remainingFuel -= flow;
-                //Console.WriteLine($"{flow} - [{phaseOfFlight}]");
-                ffParams.alt += ffParams.vs * dt;
-                ffParams.mass = ComputeGrossMass(remainingFuel, route);
-
-                double angleOfClimb = Math.Asin(ffParams.vs / ffParams.tas);
-
+                double flow;
+                double angleOfClimb;
                 switch (phaseOfFlight)
                 {
-                    case FlightPhase.Climb:
-                    case FlightPhase.Cruise:
-                        distanceTravelled += ffParams.tas * dt * Math.Cos(angleOfClimb) * M_TO_NMI;
-                        break;
-                    case FlightPhase.Descent:
-                    case FlightPhase.FinalApproach:
-                        descentTrackLength += ffParams.tas * dt * Math.Cos(angleOfClimb) * M_TO_NMI;
+                    case FlightPhase.DescentTrackLengthComputation:
+                        angleOfClimb = Math.Asin(descentFFParams.vs / descentFFParams.tas);
+                        descentTrackLength += descentFFParams.tas * dt * Math.Cos(angleOfClimb) * M_TO_NMI;
+                        descentFFParams.alt += descentFFParams.vs * dt;
                         break;
                     default:
-                        throw new InvalidOperationException();
+                        angleOfClimb = Math.Asin(ffParams.vs / ffParams.tas);
+                        flow = await GetFuelFlow(ffParams);
+
+                        remainingFuel -= flow * dt;
+                        //Console.WriteLine($"{flow} - [{phaseOfFlight}]");
+                        ffParams.alt += ffParams.vs * dt;
+                        ffParams.mass = ComputeGrossMass(remainingFuel, route);
+                        distanceTravelled += ffParams.tas * dt * Math.Cos(angleOfClimb) * M_TO_NMI;
+
+                        break;
                 }
+
 
             }
 
@@ -160,6 +163,7 @@ namespace FlightRouteGenerator
 
             while (ffParams.alt < route.Aircraft.ClimbXOVerAltConstantCAS)
             {
+                ffParams.tas = (int)Math.Round(CAStoTAS(ffParams.alt, cas));
                 await RunSimulationTick();
             }
 
@@ -169,6 +173,7 @@ namespace FlightRouteGenerator
 
             while (ffParams.alt < route.Aircraft.ClimbXOverAltConstantMach)
             {
+                ffParams.tas = (int)Math.Round(CAStoTAS(ffParams.alt, cas));
                 await RunSimulationTick();
             }
 
@@ -178,16 +183,65 @@ namespace FlightRouteGenerator
 
             while (ffParams.alt < route.CruiseAltitude)
             {
+                ffParams.tas = (int)Math.Round(MachToTAS(ffParams.alt, mach));
                 await RunSimulationTick();
             }
 
-            // simulating descent before simulating cruise
+            // getting descent track length before simulating cruise
+            phaseOfFlight = FlightPhase.DescentTrackLengthComputation;
+            descentFFParams = ffParams;
+            // entering constant mach stage of descent
+            mach = route.Aircraft.DescentConstMach;
+            descentFFParams.vs = route.Aircraft.DescentConstMachVS;
+            while (descentFFParams.alt > route.Aircraft.DescentXOverAltConstMach)
+            {
+                descentFFParams.tas = (int)Math.Round(MachToTAS(descentFFParams.alt, mach));
+                await RunSimulationTick();
+            }
+
+            // entering constant CAS stage of descent
+            cas = route.Aircraft.DescentConstCAS;
+            descentFFParams.vs = route.Aircraft.DescentConstCASVS;
+            while (descentFFParams.alt > route.Aircraft.DescentXOverAltConstCAS)
+            {
+                descentFFParams.tas = (int)Math.Round(CAStoTAS(descentFFParams.alt, cas));
+                await RunSimulationTick();
+            }
+
+            // entering final approach stage of descent
+            cas = route.Aircraft.FinalApproachCAS;
+            descentFFParams.vs = route.Aircraft.FinalApproachVS;
+            while (descentFFParams.alt > route.ArrivalAirport.altitude)
+            {
+                ffParams.tas = (int)Math.Round(CAStoTAS(descentFFParams.alt, cas));
+                await RunSimulationTick();
+            }
+
+            climbAndCruiseTrackLength = route.TotalDistance - descentTrackLength;
+
+            // entering cruise
+            int cruiseCounter = 0;
+            ffParams.vs = 0;
+            mach = route.Aircraft.CruiseMach;
+            phaseOfFlight = FlightPhase.Cruise;
+            ffParams.alt = route.CruiseAltitude;
+            ffParams.tas = (int)Math.Round(MachToTAS(ffParams.alt, mach));
+
+            while (distanceTravelled < climbAndCruiseTrackLength)
+            {
+                cruiseCounter += dt;
+                await RunSimulationTick();
+            }
+
+            // simulating descent stages for real this time
+            phaseOfFlight = FlightPhase.Descent;
             // entering constant mach stage of descent
             phaseOfFlight = FlightPhase.Descent;
             mach = route.Aircraft.DescentConstMach;
             ffParams.vs = route.Aircraft.DescentConstMachVS;
             while (ffParams.alt > route.Aircraft.DescentXOverAltConstMach)
             {
+                ffParams.tas = (int)Math.Round(MachToTAS(ffParams.alt, mach));
                 await RunSimulationTick();
             }
 
@@ -196,6 +250,7 @@ namespace FlightRouteGenerator
             ffParams.vs = route.Aircraft.DescentConstCASVS;
             while (ffParams.alt > route.Aircraft.DescentXOverAltConstCAS)
             {
+                ffParams.tas = (int)Math.Round(CAStoTAS(ffParams.alt, cas));
                 await RunSimulationTick();
             }
 
@@ -205,18 +260,7 @@ namespace FlightRouteGenerator
             ffParams.vs = route.Aircraft.FinalApproachVS;
             while (ffParams.alt > route.ArrivalAirport.altitude)
             {
-                await RunSimulationTick();
-            }
-
-            climbAndCruiseTrackLength = route.TotalDistance - descentTrackLength;
-
-            // entering cruise
-            ffParams.vs = 0;
-            mach = route.Aircraft.CruiseMach;
-            phaseOfFlight = FlightPhase.Cruise;
-
-            while (distanceTravelled < climbAndCruiseTrackLength)
-            {
+                ffParams.tas = (int)Math.Round(CAStoTAS(ffParams.alt, cas));
                 await RunSimulationTick();
             }
 
