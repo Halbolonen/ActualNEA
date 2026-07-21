@@ -128,7 +128,7 @@ namespace FlightRouteGenerator
             {
                 alt = route.DepartureAirport.altitude,
                 vs = route.Aircraft.InitialClimbVS,
-                mass = ComputeGrossMass((int)Math.Round(Math.Clamp(remainingFuel, 0, route.Aircraft.MaxFuelCapacity)), route),
+                mass = ComputeGrossMass(remainingFuel, route),
                 aircraft_type = route.Aircraft.ICAOIdent
             };
 
