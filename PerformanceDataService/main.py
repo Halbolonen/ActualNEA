@@ -1,8 +1,7 @@
 from fastapi import FastAPI
-from openap import prop
+from openap import prop, FuelFlow, Thrust
 from openap.kinematic import WRAP
 from pydantic import BaseModel
-from openap import FuelFlow
 
 app = FastAPI()
 
@@ -94,6 +93,24 @@ def get_enroute_fuelflow(ff_params: FuelFlowParameters):
         vs=ff_params.vs,
         acc=ff_params.acc,
         dT=ff_params.dT
+    )
+    print(ff_params.mass, ff_params.alt, flow)
+
+    return flow
+
+@app.post("/get_climb_fuelflow")
+def get_climb_fuelflow(ff_params: FuelFlowParameters):
+    MpS_TO_FpM: float = 196.85
+    thrust_model = Thrust(ff_params.aircraft_type)
+    climb_thrust = thrust_model.climb(
+        tas=ff_params.tas,
+        alt=ff_params.alt,
+        roc=ff_params.vs * MpS_TO_FpM
+    )
+
+    fuelflow_model = FuelFlow(ff_params.aircraft_type)
+    flow = fuelflow_model.at_thrust(
+        total_ac_thrust=climb_thrust
     )
 
     return flow

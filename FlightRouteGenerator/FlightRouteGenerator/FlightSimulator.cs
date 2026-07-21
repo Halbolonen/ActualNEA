@@ -63,14 +63,23 @@ namespace FlightRouteGenerator
             return fuelMassInt + route.Loadsheet.ZFW;
         }
 
-        private static async Task<double> GetFuelFlow(PDS_FuelFlowParameters ffParams)
+        private static async Task<double> GetFuelFlow(PDS_FuelFlowParameters ffParams, FlightPhase flightPhase)
         {
             string serialisedFFParams = JsonSerializer.Serialize(ffParams);
+            double fuelFlow;
 
-            double fuelFlow = double.Parse(
-                await PerformanceDataService.GetResponse("get_enroute_fuelflow", HttpMethod.Post, serialisedFFParams
-                )
-            );
+            switch (flightPhase)
+            {
+                case FlightPhase.Climb:
+                    fuelFlow = double.Parse(
+                            await PerformanceDataService.GetResponse("get_climb_fuelflow", HttpMethod.Post, serialisedFFParams
+                            )
+                        );
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
 
             return fuelFlow;
         }
@@ -98,14 +107,13 @@ namespace FlightRouteGenerator
             double remainingFuel = blockFuelEstimate;
             Console.WriteLine($"remaining fuel before climb: {remainingFuel} kg");
 
-            FlightPhase phaseOfFlight = FlightPhase.Takeoff;
+            FlightPhase phaseOfFlight = FlightPhase.Climb;
             verticalSpeed = route.Aircraft.InitialClimbVS;
             cas = route.Aircraft.InitialClimbCAS;
             tas = (int)Math.Round(CAStoTAS(altitude, cas));
 
             PDS_FuelFlowParameters ffParams = new PDS_FuelFlowParameters
             {
-                dT = dt,
                 alt = altitude,
                 vs = verticalSpeed,
                 tas = tas,
@@ -115,7 +123,7 @@ namespace FlightRouteGenerator
             Console.WriteLine($"ffParams mass: {ffParams.mass}");
             while (altitude < route.Aircraft.ClimbXOVerAltConstantCAS)
             {
-                remainingFuel -= await GetFuelFlow(ffParams);
+                remainingFuel -= await GetFuelFlow(ffParams, phaseOfFlight);
                 altitude += verticalSpeed * dt;
 
                 ffParams.alt = altitude;

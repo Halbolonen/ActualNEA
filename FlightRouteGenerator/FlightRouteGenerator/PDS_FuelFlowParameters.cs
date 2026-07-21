@@ -15,11 +15,13 @@ namespace FlightRouteGenerator
         public int vs { get; set; }
         public int acc { get; set; }
         public int dT { get; set; }
+        // this is ISA deviation, NOT delta time!
         public string aircraft_type { get; set; }
 
         public PDS_FuelFlowParameters()
         {
             acc = 0;
+            dT = 0;
         }
     }
 }
