@@ -75,6 +75,12 @@ namespace FlightRouteGenerator
                         Debug.WriteLine(sr.ReadLine());
                     }
                 }
+                catch (HttpRequestException hEx)
+                {
+                    Console.Write(".");
+                    Debug.WriteLine(hEx.GetType());
+                    Debug.WriteLine(hEx.Message);
+                }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.GetType());
@@ -90,7 +96,6 @@ namespace FlightRouteGenerator
         {
             string payload = "";
             string fullURI = $"{HOST_URL}/{urlPath}";
-            Console.WriteLine(urlPath);
             using StringContent jsonContent = new(serialisedJson, Encoding.UTF8, "application/json");
 
             HttpRequestMessage request = new HttpRequestMessage(method, fullURI)

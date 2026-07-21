@@ -34,6 +34,8 @@ namespace FlightRouteGenerator
         public PassengerLoadRange PassengerLoadLimits { get; set; }
         public int OEW { get; set; }
         // Operational Empty Weight, in kilograms
+        public int MaxFuelCapacity { get; set; }
+        // in kilograms
 
         private static async Task<string> InteractWithPDS(string path, HttpMethod httpMethod, string serialisedRequest)
         {
@@ -67,6 +69,10 @@ namespace FlightRouteGenerator
                 );
             aircraft.OEW = int.Parse(
                 await InteractWithPDS("get_aircraft_oew", HttpMethod.Post, serialisedAircraftRequest)
+                );
+
+            aircraft.MaxFuelCapacity = int.Parse(
+                await InteractWithPDS("get_aircraft_fuel_capacity", HttpMethod.Post, serialisedAircraftRequest)
                 );
 
             return aircraft;

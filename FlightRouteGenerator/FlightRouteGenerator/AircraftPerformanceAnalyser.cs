@@ -25,7 +25,7 @@ namespace FlightRouteGenerator
                 ));
             // max fuel capacity in kilograms
 
-            int blockFuelEstimate = maxFuelCapacity / 2;
+            
 
             route.Loadsheet = new LoadsheetInfo
             {
@@ -40,7 +40,7 @@ namespace FlightRouteGenerator
             route.Loadsheet.ZFW = route.Aircraft.OEW + route.Loadsheet.Payload;
 
             int consumedFuel = await FlightSimulator.GetFlightFuelConsumption(
-                blockFuelEstimate, route.Loadsheet.ZFW, route.Aircraft.ICAOIdent
+                route
                 );
 
             return route;

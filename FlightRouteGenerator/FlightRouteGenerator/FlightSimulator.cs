@@ -57,7 +57,7 @@ namespace FlightRouteGenerator
             return machNumber * localSpeedOfSound;
         }
 
-        public static async Task<int> GetFlightFuelConsumption(int blockFuel, int zfw, string aircraftType)
+        public static async Task<int> GetFlightFuelConsumption(Route route)
         {
             const double dt = 1;
             // seconds
@@ -70,12 +70,19 @@ namespace FlightRouteGenerator
             // Calibrated AirSpeed, in metres per second
             double mach;
             // mach number
+            int tas;
+            // True AirSpeed, in metres per second
+            int altitude = route.DepartureAirport.altitude;
+            Console.WriteLine(altitude);
+            // aircraft altitude, in metres
             string serialisedAircraftInfo = JsonSerializer.Serialize(
                 new PDS_AircraftRequest
                 {
-                    aircraft_type = aircraftType
+                    aircraft_type = route.Aircraft.ICAOIdent
                 }
             );
+
+            int blockFuelEstimate = route.Aircraft.MaxFuelCapacity / 2;
 
 
             FlightPhase phaseOfFlight = FlightPhase.Takeoff;
@@ -88,10 +95,6 @@ namespace FlightRouteGenerator
                 await PerformanceDataService.GetResponse("get_climb_init_vcas", HttpMethod.Post, serialisedAircraftInfo
                 )
             );
-            Console.WriteLine("fgblkdfj");
-            Console.WriteLine(cas);
-            double tas = CAStoTAS(5000, cas);
-            Console.WriteLine(tas);
             return 0;
         }
     }

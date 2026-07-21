@@ -10,15 +10,15 @@ namespace FlightRouteGenerator
         {
             if (!NavdataInteractor.Initialised)
             {
-                Console.WriteLine("Initialising datasets, please wait...");
+                Console.Write("Initialising datasets, please wait...");
                 NavdataInteractor.Initialise();
-                Console.WriteLine("Done!\n");
+                Console.WriteLine("\nDone!\n");
             }
             if (!PerformanceDataService.initialisationStarted)
             {
-                Console.WriteLine("Initialising Performance Data Service, please wait...");
+                Console.Write("Initialising Performance Data Service, please wait...");
                 await PerformanceDataService.Initialise();
-                Console.WriteLine("Done!\n");
+                Console.WriteLine("\nDone!\n");
             }
             Console.Clear();
 

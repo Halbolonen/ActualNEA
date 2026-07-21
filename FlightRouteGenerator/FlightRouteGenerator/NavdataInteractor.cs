@@ -88,7 +88,7 @@ namespace FlightRouteGenerator
                         apRecord.name = (string)dataReader["name"];
                         apRecord.laty = Convert.ToDouble(dataReader["laty"]);
                         apRecord.lonx = Convert.ToDouble(dataReader["lonx"]);
-                        apRecord.altitude = Convert.ToInt32(dataReader["altitude"]);
+                        apRecord.altitude = (int)((double)Convert.ToInt32(dataReader["altitude"]) / 3.281);
 
                         recordDict.Add(apRecord.AirportID, apRecord);
                         break;
