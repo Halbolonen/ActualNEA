@@ -153,7 +153,7 @@ def simulate_flight(flight_request: FlightRequest):
     )
     def run_simulation_tick():
         nonlocal remaining_fuel, distance_travelled, descent_track_length, sim_result, next_waypoint_id
-        nonlocal next_waypoint_index, next_waypoint_track_length
+        nonlocal next_waypoint_index, next_waypoint_track_length, flight_request
         flow: float
         angle_of_climb: float
 
@@ -174,11 +174,12 @@ def simulate_flight(flight_request: FlightRequest):
                 distance_travelled += (
                     ff_params.tas * dt * math.cos(angle_of_climb) / M_PER_NMI)
                 
-                if (math.ceil(distance_travelled) >= next_waypoint_track_length and next_waypoint_index < len(flight_request.waypoint_id_to_track_distance)):
-                    next_waypoint_id = flight_request.waypoint_id_to_track_distance[next_waypoint_index].waypoint_id
-                    next_waypoint_track_length = flight_request.waypoint_id_to_track_distance[next_waypoint_index].track_distance
+                if (distance_travelled >= next_waypoint_track_length and next_waypoint_index < len(flight_request.waypoint_id_to_track_distance)):
                     sim_result.waypoint_id_to_alt[next_waypoint_id] = round(ff_params.alt)
                     next_waypoint_index += 1
+                    if (next_waypoint_index < len(flight_request.waypoint_id_to_track_distance)):
+                        next_waypoint_id = flight_request.waypoint_id_to_track_distance[next_waypoint_index].waypoint_id
+                        next_waypoint_track_length = flight_request.waypoint_id_to_track_distance[next_waypoint_index].track_distance
 
 
                 return
@@ -227,6 +228,8 @@ def simulate_flight(flight_request: FlightRequest):
         while (params.alt > flight_request.arrival_arprt_alt):
             params.tas = cas_to_tas(params.alt, cas)
             run_simulation_tick()
+
+        params = max(params.alt, flight_request.arrival_arprt_alt)
 
         climb_and_cruise_track_length = flight_request.route_total_distance - descent_track_length
     

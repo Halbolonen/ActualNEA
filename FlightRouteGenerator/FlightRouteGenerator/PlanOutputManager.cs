@@ -63,7 +63,7 @@ namespace FlightRouteGenerator
 
                 if (i < route.Legs.Count - 1)
                 {
-                    fileContents += $"{leg.Waypoint.Type} {leg.Waypoint.ident} {leg.Airway.airwayName} {leg.Waypoint.Altitude} " +
+                    fileContents += $"{leg.Waypoint.Type} {leg.Waypoint.ident} {leg.Airway.airwayName} {leg.Waypoint.Altitude:F6} " +
                         $"{leg.Waypoint.laty} {leg.Waypoint.lonx}\n";
                 }
                 else

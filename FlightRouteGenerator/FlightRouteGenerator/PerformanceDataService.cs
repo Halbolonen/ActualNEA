@@ -59,7 +59,7 @@ namespace FlightRouteGenerator
             // over http.
 
             pdcalcProcess = new Process();
-            pdcalcProcess.StartInfo.UseShellExecute = true;
+            pdcalcProcess.StartInfo.UseShellExecute = false;
             pdcalcProcess.StartInfo.FileName = PYTHON_FILE_PATH;
             pdcalcProcess.StartInfo.CreateNoWindow = true;
             pdcalcProcess.StartInfo.Arguments = $"-m uvicorn PerformanceCalculator:performance_calculator --host 127.0.0.1 --port 9000";

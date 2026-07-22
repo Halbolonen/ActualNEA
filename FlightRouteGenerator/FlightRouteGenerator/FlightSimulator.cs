@@ -108,10 +108,6 @@ namespace FlightRouteGenerator
 
             foreach (RouteLeg leg in route.Legs)
             {
-                if (leg.Waypoint.WaypointID == "88056")
-                {
-                    Console.WriteLine($"present, trackdist: {trackDistance}");
-                }
                 trackDistance += leg.Length;
                 WaypointIDToTrackDistance.Add(
                     new WaypointTrackDistance
