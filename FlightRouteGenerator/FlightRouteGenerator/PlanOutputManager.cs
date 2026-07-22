@@ -478,7 +478,7 @@ ZFW: {route.Loadsheet.ZFW} kg
 
             });
 
-            bool debugLiveView = true;
+            bool debugLiveView = false;
 
             if (debugLiveView)
             {
