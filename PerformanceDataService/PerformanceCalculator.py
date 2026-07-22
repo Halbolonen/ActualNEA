@@ -178,7 +178,7 @@ def simulate_flight(flight_request: FlightRequest):
                 distance_travelled += (
                     ff_params.tas * dt * math.cos(angle_of_climb) / M_PER_NMI)
                 
-                if (distance_travelled >= next_waypoint_track_length and next_waypoint_index < len(flight_request.waypoint_id_to_track_distance)):
+                if (math.ceil(distance_travelled) >= next_waypoint_track_length and next_waypoint_index < len(flight_request.waypoint_id_to_track_distance)):
                     sim_result.waypoint_id_to_info[next_waypoint_id] = WaypointInfo(alt=0,tas=0)
                     sim_result.waypoint_id_to_info[next_waypoint_id].alt = round(ff_params.alt)
                     sim_result.waypoint_id_to_info[next_waypoint_id].tas = ff_params.tas

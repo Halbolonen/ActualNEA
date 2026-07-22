@@ -155,8 +155,6 @@ namespace FlightRouteGenerator
                 }
             }
 
-            List<RouteLeg> legsToRemove = new List<RouteLeg>();
-
             foreach (RouteLeg leg in route.Legs)
             {
                 PDS_WaypointInfo wpInfo = simResult.WaypointIDToInfo[leg.Waypoint.WaypointID];

@@ -258,6 +258,56 @@ ZFW: {route.Loadsheet.ZFW} kg
                 }
             }
 
+            void AddLegRow(TableDescriptor table, RouteLeg leg, string legType = "")
+            {
+                switch (legType)
+                {
+                    case "departureAirport":
+                        table.Cell()
+                           .BorderRight(1).Padding(4)
+                           .Text($"{""}\n{route.DepartureAirport.name.ToUpper()}\n{route.DepartureAirport.ident}").FontFamily("Consolas").FontSize(12);
+                        table.Cell()
+                            .Padding(4)
+                            .Text($"\n{ConvertCoordinates.GetPDFDecimalLatyFormat(route.DepartureAirport.laty)}\n{ConvertCoordinates.GetPDFDecimalLonxFormat(route.DepartureAirport.lonx)}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                        table.Cell()
+                            .Padding(4)
+                            .Text($"{""}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                        break;
+                    case "arrivalAirport":
+                        table.Cell()
+                           .BorderRight(1).Padding(4)
+                           .Text($"{""}\n{route.ArrivalAirport.name.ToUpper()}\n{route.ArrivalAirport.ident}").FontFamily("Consolas").FontSize(12);
+                        table.Cell()
+                            .Padding(4)
+                            .Text($"\n{ConvertCoordinates.GetPDFDecimalLatyFormat(route.ArrivalAirport.laty)}\n{ConvertCoordinates.GetPDFDecimalLonxFormat(route.ArrivalAirport.lonx)}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                        table.Cell()
+                            .Padding(4)
+                            .Text($"{""}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                        break;
+                    default:
+                        table.Cell()
+                            .BorderRight(1).Padding(4)
+                            .Text($"{leg.Airway.airwayName}\n{leg.Waypoint.Name}\n{leg.Waypoint.ident}").FontFamily("Consolas").FontSize(12);
+                        table.Cell()
+                            .Padding(4)
+                            .Text($"\n{ConvertCoordinates.GetPDFDecimalLatyFormat(leg.Waypoint.laty)}\n{ConvertCoordinates.GetPDFDecimalLonxFormat(leg.Waypoint.lonx)}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                        table.Cell()
+                            .Padding(4)
+                            .Text($"\n{leg.Waypoint.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                        break;
+                }
+
+            }
+
+            static IContainer CellStyle(IContainer container)
+            {
+                return container
+                    .DefaultTextStyle(x => x.FontFamily("Consolas").FontSize(12).SemiBold())
+                    .BorderBottom(1)
+                    .AlignCenter()
+                    .Padding(4);
+            }
+
             var document = Document.Create(container =>
             {
                 container.Page(page =>
@@ -300,10 +350,19 @@ ZFW: {route.Loadsheet.ZFW} kg
 
                                     table.Header(header =>
                                     {
-                                        header.Cell().BorderBottom(1).Padding(4).Text("").FontFamily("Consolas").FontSize(12);
-                                        header.Cell().BorderBottom(1).Padding(4).Text("EST").AlignCenter().FontFamily("Consolas").FontSize(12).SemiBold();
-                                        header.Cell().BorderBottom(1).Padding(4).Text("MAX").AlignCenter().FontFamily("Consolas").FontSize(12).SemiBold();
-                                        header.Cell().BorderBottom(1).Padding(4).Text("ACTUAL").AlignCenter().FontFamily("Consolas").FontSize(12).SemiBold();
+                                        header.Cell().Element(CellStyle);
+                                        header.Cell().Element(CellStyle).Text("EST");
+                                        header.Cell().Element(CellStyle).Text("MAX");
+                                        header.Cell().Element(CellStyle).Text("ACTUAL");
+
+                                        static IContainer CellStyle(IContainer container)
+                                        {
+                                            return container
+                                                .DefaultTextStyle(x => x.FontFamily("Consolas").FontSize(12).SemiBold())
+                                                .BorderBottom(1)
+                                                .AlignCenter()
+                                                .Padding(4);
+                                        }
                                     });
 
                                     table.Cell()
@@ -423,25 +482,14 @@ ZFW: {route.Loadsheet.ZFW} kg
                                     header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("\n\nTAS").FontFamily("Consolas").FontSize(12).SemiBold();
                                 });
 
-                                table.Cell()
-                                    .BorderRight(1).Padding(4)
-                                     .Text($"{""}\n{route.DepartureAirport.name.ToUpper()}\n{route.DepartureAirport.ident}").FontFamily("Consolas").FontSize(12);
-                                table.Cell()
-                                    .Padding(4)
-                                    .Text($"\n{ConvertCoordinates.GetPDFDecimalLatyFormat(route.DepartureAirport.laty)}\n{ConvertCoordinates.GetPDFDecimalLonxFormat(route.DepartureAirport.lonx)}").AlignCenter().FontFamily("Consolas").FontSize(12);
-                                table.Cell()
-                                    .Padding(4)
-                                    .Text($"{""}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                AddLegRow(table, route.Legs[0], legType: "departureAirport");
+                                
+                                for (int i = 1; i < route.Legs.Count - 1; i++)
+                                {
+                                    AddLegRow(table, route.Legs[i]);
+                                }
 
-                                table.Cell()
-                                    .BorderRight(1).Padding(4)
-                                    .Text($"{route.Legs[legIndex].Airway.airwayName}\n{route.Legs[legIndex].Waypoint.Name}\n{route.Legs[legIndex].Waypoint.ident}").FontFamily("Consolas").FontSize(12);
-                                table.Cell()
-                                    .Padding(4)
-                                    .Text($"\n{ConvertCoordinates.GetPDFDecimalLatyFormat(route.Legs[legIndex].Waypoint.laty)}\n{ConvertCoordinates.GetPDFDecimalLonxFormat(route.Legs[legIndex].Waypoint.lonx)}").AlignCenter().FontFamily("Consolas").FontSize(12);
-                                table.Cell()
-                                    .Padding(4)
-                                    .Text($"\n{route.Legs[legIndex].Waypoint.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                AddLegRow(table, route.Legs[route.Legs.Count - 1], legType: "arrivalAirport");
                             });
                         });
 
