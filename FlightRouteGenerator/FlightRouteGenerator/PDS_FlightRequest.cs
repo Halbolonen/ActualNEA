@@ -16,13 +16,13 @@ namespace FlightRouteGenerator
         [JsonPropertyName("acft_request")]
         public PDS_AircraftRequest AircraftRequest { get; set; }
         [JsonPropertyName("zfw")]
-        public int ZFW { get; set; }
+        public double ZFW { get; set; }
         [JsonPropertyName("cruise_altitude")]
         public int CruiseAltitude { get; set; }
         [JsonPropertyName("route_total_distance")]
         public double RouteTotalDistance { get; set; }
         [JsonPropertyName("trip_fuel")]
-        public int TripFuel { get; set; }
+        public double TripFuel { get; set; }
         [JsonPropertyName("waypoint_id_to_track_distance")]
         public List<WaypointTrackDistance> WaypointIDToTrackDistance { get; set; }
     }

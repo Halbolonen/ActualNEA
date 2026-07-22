@@ -35,7 +35,7 @@ namespace FlightRouteGenerator
             route.Loadsheet.Payload = route.Loadsheet.Pax * PAX_AND_CARRY_ON_MASS + route.Loadsheet.BagsAndCargo;
             route.Loadsheet.ZFW = route.Aircraft.OEW + route.Loadsheet.Payload;
 
-            int tripFuel = await FlightSimulator.GetFlightFuelConsumption(route);
+            double tripFuel = await FlightSimulator.GetFlightFuelConsumption(route);
             route.Loadsheet.BlockFuel = tripFuel; // FIXME
             route.Loadsheet.TOW = route.Loadsheet.ZFW + route.Loadsheet.BlockFuel;
             route.Loadsheet.LAW = route.Loadsheet.TOW - tripFuel;

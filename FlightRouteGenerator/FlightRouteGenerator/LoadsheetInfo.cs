@@ -10,17 +10,17 @@ namespace FlightRouteGenerator
     {
         public int Pax { get; set; }
         // number of passengers
-        public int BlockFuel { get; set; }
+        public double BlockFuel { get; set; }
         // total weight of fuel loaded onto the aircraft, in kilograms
-        public int BagsAndCargo { get; set; }
+        public double BagsAndCargo { get; set; }
         // checked bags and cargo loaded onto the aircraft, in kilograms
-        public int Payload { get; set; }
+        public double Payload { get; set; }
         // passengers + carry-on + checked bags and cargo, in kilograms
-        public int TOW { get; set; }
+        public double TOW { get; set; }
         // Take-Off Weight, in kilograms
-        public int LAW { get; set; }
+        public double LAW { get; set; }
         // Landing Weight, in kilograms
-        public int ZFW { get; set; }
+        public double ZFW { get; set; }
         // Zero Fuel Weight, in kilograms
     }
 }

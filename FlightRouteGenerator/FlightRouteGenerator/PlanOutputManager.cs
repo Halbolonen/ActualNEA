@@ -271,6 +271,7 @@ ZFW: {route.Loadsheet.ZFW} kg
                                 .FontSize(14)
                                 .FontColor(Colors.Black)
                                 .AlignCenter()
+                                .SemiBold()
                                 .FontFamily("Consolas");
 
                             column.Item().Table(table =>
@@ -309,7 +310,7 @@ ZFW: {route.Loadsheet.ZFW} kg
                                         .Text("BAG/CARGO").FontFamily("Consolas").FontSize(12);
                                     table.Cell()
                                         .Padding(4)
-                                        .Text($"{route.Loadsheet.BagsAndCargo}").FontFamily("Consolas").FontSize(12);
+                                        .Text($"{Math.Round(route.Loadsheet.BagsAndCargo/1000):F1}").FontFamily("Consolas").FontSize(12);
                                     table.Cell()
                                         .Padding(4)
                                         .Text($"{"!IMP"}").FontFamily("Consolas").FontSize(12);
@@ -322,7 +323,7 @@ ZFW: {route.Loadsheet.ZFW} kg
                                         .Text("PAYLOAD").FontFamily("Consolas").FontSize(12);
                                     table.Cell()
                                         .Padding(4)
-                                        .Text($"{route.Loadsheet.Payload}").FontFamily("Consolas").FontSize(12);
+                                        .Text($"{Math.Round(route.Loadsheet.Payload/1000):F1}").FontFamily("Consolas").FontSize(12);
                                     table.Cell()
                                         .Padding(4)
                                         .Text($"{"!IMP"}").FontFamily("Consolas").FontSize(12);
@@ -335,7 +336,7 @@ ZFW: {route.Loadsheet.ZFW} kg
                                         .Text("ZFW").FontFamily("Consolas").FontSize(12);
                                     table.Cell()
                                         .Padding(4)
-                                        .Text($"{route.Loadsheet.ZFW}").FontFamily("Consolas").FontSize(12);
+                                        .Text($"{Math.Round(route.Loadsheet.ZFW/1000):F1}").FontFamily("Consolas").FontSize(12);
                                     table.Cell()
                                         .Padding(4)
                                         .Text($"{"!IMP"}").FontFamily("Consolas").FontSize(12);
@@ -348,7 +349,7 @@ ZFW: {route.Loadsheet.ZFW} kg
                                         .Text("FUEL").FontFamily("Consolas").FontSize(12);
                                     table.Cell()
                                         .Padding(4)
-                                        .Text($"{route.Loadsheet.BlockFuel}").FontFamily("Consolas").FontSize(12);
+                                        .Text($"{Math.Round(route.Loadsheet.BlockFuel/1000):F1}").FontFamily("Consolas").FontSize(12);
                                     table.Cell()
                                         .Padding(4)
                                         .Text($"{"!IMP"}").FontFamily("Consolas").FontSize(12);
@@ -361,7 +362,7 @@ ZFW: {route.Loadsheet.ZFW} kg
                                         .Text("TOW").FontFamily("Consolas").FontSize(12);
                                     table.Cell()
                                         .Padding(4)
-                                        .Text($"{route.Loadsheet.TOW}").FontFamily("Consolas").FontSize(12);
+                                        .Text($"{Math.Round(route.Loadsheet.TOW/1000):F1}").FontFamily("Consolas").FontSize(12);
                                     table.Cell()
                                         .Padding(4)
                                         .Text($"{"!IMP"}").FontFamily("Consolas").FontSize(12);
@@ -374,7 +375,7 @@ ZFW: {route.Loadsheet.ZFW} kg
                                         .Text("LAW").FontFamily("Consolas").FontSize(12);
                                     table.Cell()
                                         .Padding(4)
-                                        .Text($"{route.Loadsheet.LAW}").FontFamily("Consolas").FontSize(12);
+                                        .Text($"{Math.Round(route.Loadsheet.LAW/1000):F1}").FontFamily("Consolas").FontSize(12);
                                     table.Cell()
                                         .Padding(4)
                                         .Text($"{"!IMP"}").FontFamily("Consolas").FontSize(12);

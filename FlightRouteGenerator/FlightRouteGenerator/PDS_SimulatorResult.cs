@@ -10,7 +10,7 @@ namespace FlightRouteGenerator
     internal class PDS_SimulatorResult
     {
         [JsonPropertyName("trip_fuel")]
-        public int TripFuel { get; set; }
+        public double TripFuel { get; set; }
         [JsonPropertyName("waypoint_id_to_alt")]
         public Dictionary<string, int> WaypointIDToAlt { get; set; }
     }

@@ -79,10 +79,9 @@ namespace FlightRouteGenerator
             return machNumber * localSpeedOfSound;
         }
 
-        private static int ComputeGrossMass(double fuelMass, Route route)
+        private static double ComputeGrossMass(double fuelMass, Route route)
         {
-            int fuelMassInt = (int)Math.Round(Math.Clamp(fuelMass, 0, route.Aircraft.MaxFuelCapacity));
-            return fuelMassInt + route.Loadsheet.ZFW;
+            return Math.Clamp(fuelMass, 0, route.Aircraft.MaxFuelCapacity) + route.Loadsheet.ZFW;
         }
 
         private static async Task<double> GetFuelFlow(PDS_FuelFlowParameters ffParams)
@@ -98,9 +97,9 @@ namespace FlightRouteGenerator
             return fuelFlow;
         }
 
-        public static async Task<int> GetFlightFuelConsumption(Route route)
+        public static async Task<double> GetFlightFuelConsumption(Route route)
         {
-            int burnedFuel = route.Aircraft.MaxFuelCapacity / 2;
+            double burnedFuel = route.Aircraft.MaxFuelCapacity / 2;
             const double M_TO_FT = 3.28084;
 
             double trackDistance = 0;

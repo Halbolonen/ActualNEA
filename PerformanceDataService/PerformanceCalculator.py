@@ -18,10 +18,10 @@ class FlightRequest(BaseModel):
     departure_arprt_alt: int
     arrival_arprt_alt: int
     acft_request: AircraftRequest
-    zfw: int
+    zfw: float
     cruise_altitude: int
     route_total_distance: float
-    trip_fuel: int
+    trip_fuel: float
     waypoint_id_to_track_distance: list[WaypointTrackDistance]
 
 class FuelFlowParameters(BaseModel):
@@ -34,7 +34,7 @@ class FuelFlowParameters(BaseModel):
     aircraft_type: str
 
 class SimulatorResult(BaseModel):
-    trip_fuel: int
+    trip_fuel: float
     waypoint_id_to_alt: dict
 
 class FlightPhase(Enum):
