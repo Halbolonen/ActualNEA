@@ -1,14 +1,25 @@
 ﻿using System;
+using System.Text.Json;
 using System.Threading;
 
 namespace FlightRouteGenerator
 {
     class Program
     {
-        private static void RunProgram()
+        private static async Task RunProgram()
         {
-            Console.WriteLine("Initialising datasets, please wait...");
-            NavdataInteractor.Initialise();
+            if (!NavdataInteractor.Initialised)
+            {
+                Console.Write("Initialising datasets, please wait...");
+                NavdataInteractor.Initialise();
+                Console.WriteLine("\nDone!\n");
+            }
+            if (!PerformanceDataService.initialisationStarted)
+            {
+                Console.Write("Initialising Performance Data Service, please wait...");
+                await PerformanceDataService.Initialise();
+                Console.WriteLine("\nDone!\n");
+            }
             Console.Clear();
 
             Console.Write("Welcome to the Flight Route Planner!\nEnter departure airport ICAO code: ");
@@ -16,9 +27,17 @@ namespace FlightRouteGenerator
             Console.Write("Enter arrival airport ICAO code: ");
             string arrivalInput = Console.ReadLine().ToUpper();
 
+            Console.Write("Enter aircraft type ICAO code: ");
+            string acftTypeInput = Console.ReadLine().ToUpper();
+
             if (departureInput == arrivalInput)
             {
                 throw new InvalidRouteInputException();
+            }
+
+            if (!AircraftPerformanceAnalyser.SupportedAircraftTypes.Contains(acftTypeInput))
+            {
+                throw new InvalidAircraftTypeInputException();
             }
             AirportRecord departureAirport;
             AirportRecord arrivalAirport;
@@ -38,7 +57,14 @@ namespace FlightRouteGenerator
 
             try
             {
+                Console.Write("\nFinding a route...");
                 route = aStar.GetRouteBetweenAirports(departureAirport, arrivalAirport);
+                route.Aircraft = await Aircraft.CreateAsync(acftTypeInput);
+                Console.WriteLine("\nDone!\n");
+                Console.Write("Evaluating aircraft performance...");
+
+                route = await AircraftPerformanceAnalyser.AddVerticalProfileToRoute(route);
+                Console.WriteLine("\nDone!\n");
 
                 Console.Clear();
                 Console.WriteLine("Use the menu to select the formats you want your flight plan to be outputted in.\n");
@@ -55,7 +81,7 @@ namespace FlightRouteGenerator
                             break;
 
                         case 1:
-                            Console.WriteLine("not implemented");
+                            PlanOutputManager.OutputRouteToPDFFile(route);
                             break;
 
                         case 2:
@@ -74,25 +100,33 @@ namespace FlightRouteGenerator
             }
         }
 
-        private static void StartProgram()
+        private static async Task StartProgram()
         {
             try
             {
-                RunProgram();
+                await RunProgram();
             }
             catch (InvalidRouteInputException)
             {
                 Console.WriteLine("\n\nInvalid input.\nOnly enter different valid ICAO airport codes.\nPress any key to restart...");
                 Console.ReadKey();
-                Console.Clear();
-                StartProgram();
+                await StartProgram();
+            }
+            catch (InvalidAircraftTypeInputException)
+            {
+                Console.WriteLine("\n\nInvalid input.\nOnly enter valid, supported ICAO aircraft types.");
+                Console.WriteLine("Supported aircraft types are:\n");
+
+                Console.WriteLine(string.Join(", ", AircraftPerformanceAnalyser.SupportedAircraftTypes.ToArray()));
+                Console.WriteLine("\nPress any key to restart...");
+                Console.ReadKey();
+                await StartProgram();
             }
         }
 
-        public static void Main()
+        public static async Task Main()
         {
-
-            StartProgram();
+            await StartProgram();
 
             Console.WriteLine("\n\nPress any key to exit.");
             Console.ReadKey();

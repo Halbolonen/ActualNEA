@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace FlightRouteGenerator
 {
     internal static class NavdataInteractor
     {
-        private static SQLiteConnection navDBConnection = new SQLiteConnection(GLOBAL_SETTINGS.navDBFilePath);
+        private static string NAV_DB_FILE_PATH = $"Data Source=\"{Directory.GetCurrentDirectory()}\\Data\\navdata.sqlite\";";
+        private static SQLiteConnection navDBConnection = new SQLiteConnection(NAV_DB_FILE_PATH);
         public static Dictionary<string, Record> waypointRecordDict { get; private set; }
         public static Dictionary<string, Record> airportRecordDict { get; private set; }
         public static Dictionary<string, Record> airwayRecordDict { get; private set; }
@@ -17,18 +20,18 @@ namespace FlightRouteGenerator
         public static HashSet<string> NDBIdentHashSet { get; private set; }
         public static Dictionary<string, List<(WaypointRecord, AirwayRecord)>> outgoingAirwaysByWaypointID { get; set; }
         private static HashSet<string> connectedWaypointIDs = new HashSet<string>();
+        public static bool Initialised { get; private set; }
 
         private static Dictionary<string, Record> LoadRecords(string typeOfRecord)
         {
             Dictionary<string, Record> recordDict = new Dictionary<string, Record>();
-
             navDBConnection.Open();
             string command = "";
             switch (typeOfRecord)
             {
                 case "waypoint":
                     command =
-                @"SELECT waypoint_id, ident, lonx, laty 
+                @"SELECT waypoint_id, ident, lonx, laty, name
                 FROM waypoint";
                     break;
 
@@ -73,6 +76,14 @@ namespace FlightRouteGenerator
                         wpRecord.ident = (string)dataReader["ident"];
                         wpRecord.laty = Convert.ToDouble(dataReader["laty"]);
                         wpRecord.lonx = Convert.ToDouble(dataReader["lonx"]);
+                        if (!dataReader.IsDBNull(4))
+                        {
+                            wpRecord.Name = (string)dataReader["name"];
+                        }
+                        else
+                        {
+                            wpRecord.Name = "";
+                        }
 
                         recordDict.Add(wpRecord.WaypointID, wpRecord);
                         break;
@@ -85,7 +96,7 @@ namespace FlightRouteGenerator
                         apRecord.name = (string)dataReader["name"];
                         apRecord.laty = Convert.ToDouble(dataReader["laty"]);
                         apRecord.lonx = Convert.ToDouble(dataReader["lonx"]);
-                        apRecord.altitude = Convert.ToInt32(dataReader["altitude"]);
+                        apRecord.altitude = (int)((double)Convert.ToInt32(dataReader["altitude"]) / 3.281);
 
                         recordDict.Add(apRecord.AirportID, apRecord);
                         break;
@@ -187,8 +198,6 @@ namespace FlightRouteGenerator
                 }
             }
 
-            Console.WriteLine(waypointRecordDict.Count);
-
             outgoingAirwaysByWaypointID = new Dictionary<string, List<(WaypointRecord, AirwayRecord)>>();
             Record toWaypoint = new Record();
 
@@ -212,6 +221,8 @@ namespace FlightRouteGenerator
                     }
                 }
             }
+
+            Initialised = true;
         }
 
         public static WaypointRecord FindWaypointByIdent(string inputIdent)

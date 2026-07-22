@@ -188,6 +188,7 @@ namespace FlightRouteGenerator
             RouteLeg finalWptToDestinationLeg = new RouteLeg();
             WaypointRecord arrivalAirportDummy = new WaypointRecord();
             arrivalAirportDummy.ident = arrivalAirport.ident;
+            arrivalAirportDummy.WaypointID = GLOBAL_SETTINGS.DEST_ARPRT_WPT_ID;
             finalWptToDestinationLeg.isAirportLeg = true;
 
             finalWptToDestinationLeg.Airway = AirwayRecord.CreateDirectBetweenGeoCoordinates(finalWaypoint.laty, finalWaypoint.lonx,

@@ -1,10 +1,26 @@
-﻿using System.Runtime.InteropServices;
+﻿using QuestPDF.Companion;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
 using System.Xml.Linq;
 
 namespace FlightRouteGenerator
 {
+
     internal class PlanOutputManager
     {
+        private static void DrawLine()
+        {
+            for (int i = 0; i < Console.WindowWidth; i++)
+            {
+                Console.Write('-');
+            }
+            Console.WriteLine();
+        }
+
+        private static double M_TO_FT = 3.28084;
 
         private static Dictionary<string, Guid> KnownFolderGUIDs = new Dictionary<string, Guid>
         {
@@ -17,11 +33,15 @@ namespace FlightRouteGenerator
         public static void OutputRouteToConsole(Route route)
         {
             Console.WriteLine("\nYour route:\n");
-            Console.WriteLine($"{route.DepartureAirport.ident}\n---------------");
+            Console.WriteLine($"{route.DepartureAirport.ident} at {Math.Round(route.DepartureAirport.altitude * M_TO_FT)} ft altitude\n---------------");
 
             foreach (RouteLeg leg in route.Legs)
             {
-                Console.WriteLine($"{leg.Airway.airwayName} {leg.Waypoint.ident} ({leg.Length:F1} nmi) \n---------------");
+                if (leg.Airway.isDirect)
+                {
+                    leg.Airway.airwayName = GLOBAL_SETTINGS.DIRECT_FORMAT;
+                }
+                Console.WriteLine($"{leg.Airway.airwayName} {leg.Waypoint.ident} at {leg.Waypoint.Altitude} ft altitude (leg length {leg.Length:F1} nmi) \n---------------");
             }
 
             Console.WriteLine($"\n\nRoute in a format suitable for entry into a flight plotting tool:\n\n");
@@ -31,12 +51,27 @@ namespace FlightRouteGenerator
             {
                 if (leg.Airway.isDirect)
                 {
-                    leg.Airway.airwayName = "DCT";
+                    leg.Airway.airwayName = GLOBAL_SETTINGS.DIRECT_FORMAT;
                 }
                 Console.Write($"{leg.Airway.airwayName} {leg.Waypoint.ident} ");
             }
 
             Console.WriteLine($"\n\nTotal distance: {route.TotalDistance:F1} nmi");
+
+            DrawLine();
+            Console.WriteLine("\nLOADSHEET DATA BELOW\n");
+            DrawLine();
+            Console.WriteLine();
+
+            Console.WriteLine(
+@$"PAX: {route.Loadsheet.Pax}
+BLOCK FUEL: {route.Loadsheet.BlockFuel} kg
+BAGS/CARGO: {route.Loadsheet.BagsAndCargo} kg
+PAYLOAD: {route.Loadsheet.Payload} kg
+TOW: {route.Loadsheet.TOW} kg
+LAW: {route.Loadsheet.LAW} kg
+ZFW: {route.Loadsheet.ZFW} kg
+                ");
         }
 
         public static void OutputRouteToFMSFile(Route route)
@@ -47,7 +82,6 @@ namespace FlightRouteGenerator
             string filePath = $"{SHGetKnownFolderPath(KnownFolderGUIDs["Downloads"], 0)}\\{fileName}";
 
             const string DIRECT = "DRCT";
-            string wptAlt = "WPT_ALT_HERE";
             string fileContents = $"I\n1100 Version\nCYCLE {GLOBAL_SETTINGS.AIRAC_CYCLE}\nADEP " +
                 $"{route.DepartureAirport.ident}\nADES {route.ArrivalAirport.ident}\nNUMENR {route.enrouteWaypointCount}\n" +
                 $"{(int)WaypointType.Airport} {route.DepartureAirport.ident} " +
@@ -59,7 +93,7 @@ namespace FlightRouteGenerator
 
                 if (i < route.Legs.Count - 1)
                 {
-                    fileContents += $"{leg.Waypoint.Type} {leg.Waypoint.ident} {leg.Airway.airwayName} {wptAlt} " +
+                    fileContents += $"{leg.Waypoint.Type} {leg.Waypoint.ident} {leg.Airway.airwayName} {leg.Waypoint.Altitude:F6} " +
                         $"{leg.Waypoint.laty} {leg.Waypoint.lonx}\n";
                 }
                 else
@@ -160,8 +194,6 @@ namespace FlightRouteGenerator
             string fileName = $"{route.DepartureAirport.ident}{route.ArrivalAirport.ident}.pln";
             string filePath = $"{SHGetKnownFolderPath(KnownFolderGUIDs["Downloads"], 0)}\\{fileName}";
 
-            double placeholderWptAlt = 67;
-            string crzAlt = "CRZ_ALT_HERE";
             string planTitle = $"{route.DepartureAirport.ident} to {route.ArrivalAirport.ident}";
 
             string departureLLA = GenerateLLA(route.DepartureAirport.laty, route.DepartureAirport.lonx, route.DepartureAirport.altitude);
@@ -178,7 +210,7 @@ namespace FlightRouteGenerator
             XElement flightPlan = new XElement("FlightPlan.FlightPlan",
                 new XElement("Title", planTitle),
                 new XElement("FPType", "IFR"),
-                new XElement("CruisingAlt", crzAlt),
+                new XElement("CruisingAlt", route.CruiseAltitude * M_TO_FT),
                 new XElement("DepartureID", route.DepartureAirport.ident),
                 new XElement("DepartureLLA", departureLLA),
                 new XElement("DestinationID", route.ArrivalAirport.ident),
@@ -196,7 +228,7 @@ namespace FlightRouteGenerator
             {
                 if (!leg.isAirportLeg)
                 {
-                    flightPlan.Add(GenerateRouteLegATCWaypointXElement(leg, placeholderWptAlt));
+                    flightPlan.Add(GenerateRouteLegATCWaypointXElement(leg, leg.Waypoint.Altitude));
                 }
             }
 
@@ -207,6 +239,224 @@ namespace FlightRouteGenerator
             planDoc.Save(filePath);
 
             Console.WriteLine($"Microsoft Flight Simulator route file:\nFlight plan exported as {fileName} to {filePath}\n");
+        }
+
+        public static void OutputRouteToPDFFile(Route route)
+        {
+            const double MpS_TO_KTS = 1.94384;
+            // conversion factor from m/s to knots
+
+            QuestPDF.Settings.License = LicenseType.Community;
+            int remainingNumberOfLegsToOutput = route.Legs.Count;
+            int legIndex = 0;
+
+            foreach (RouteLeg leg in route.Legs)
+            {
+                if (leg.Airway.isDirect)
+                {
+                    leg.Airway.airwayName = GLOBAL_SETTINGS.DIRECT_FORMAT;
+                }
+            }
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(1, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(20));
+
+                    page.Header()
+                        .Text($"{route.DepartureAirport.ident} - {route.ArrivalAirport.ident}")
+                        .SemiBold().FontSize(18).FontColor(Colors.Black)
+                        .AlignCenter()
+                        .FontFamily("Consolas");
+
+                    page.Content()
+                        .Border(3)
+                        .BorderColor(Colors.Grey.Darken1)
+                        .Padding(10)
+                        .Column(column =>
+                        {
+                            column.Spacing(20);
+
+                            column.Item().Text("LOADSHEET")
+                                .FontSize(14)
+                                .FontColor(Colors.Black)
+                                .AlignCenter()
+                                .SemiBold()
+                                .FontFamily("Consolas");
+
+                            column.Item().Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
+                                    {
+                                        columns.ConstantColumn(80);
+                                        columns.ConstantColumn(65);
+                                        columns.ConstantColumn(65);
+                                        columns.ConstantColumn(65);
+                                    });
+
+                                    table.Header(header =>
+                                    {
+                                        header.Cell().BorderBottom(1).Padding(4).Text("").FontFamily("Consolas").FontSize(12);
+                                        header.Cell().BorderBottom(1).Padding(4).Text("EST").AlignCenter().FontFamily("Consolas").FontSize(12).SemiBold();
+                                        header.Cell().BorderBottom(1).Padding(4).Text("MAX").AlignCenter().FontFamily("Consolas").FontSize(12).SemiBold();
+                                        header.Cell().BorderBottom(1).Padding(4).Text("ACTUAL").AlignCenter().FontFamily("Consolas").FontSize(12).SemiBold();
+                                    });
+
+                                    table.Cell()
+                                        .BorderRight(1).Padding(4)
+                                        .Text("PAX").FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{route.Loadsheet.Pax}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{"!IMP"}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(8)
+                                        .Text("......").AlignCenter().FontFamily("Consolas").FontSize(12);
+
+                                    table.Cell()
+                                        .BorderRight(1)
+                                        .Padding(4)
+                                        .Text("BAG/CARGO").FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{Math.Round(route.Loadsheet.BagsAndCargo/1000):F1}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{"!IMP"}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(8)
+                                        .Text("......").AlignCenter().FontFamily("Consolas").FontSize(12);
+
+                                    table.Cell()
+                                        .BorderRight(1)
+                                        .Padding(4)
+                                        .Text("PAYLOAD").FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{Math.Round(route.Loadsheet.Payload/1000):F1}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{"!IMP"}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(8)
+                                        .Text("......").AlignCenter().FontFamily("Consolas").FontSize(12);
+
+                                    table.Cell()
+                                        .BorderRight(1).Padding(4)
+                                        .Text("ZFW").FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{Math.Round(route.Loadsheet.ZFW/1000):F1}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{"!IMP"}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(8)
+                                        .Text("......").AlignCenter().FontFamily("Consolas").FontSize(12);
+
+                                    table.Cell()
+                                        .BorderRight(1).Padding(4)
+                                        .Text("FUEL").FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{Math.Round(route.Loadsheet.BlockFuel/1000):F1}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{"!IMP"}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(8)
+                                        .Text("......").AlignCenter().FontFamily("Consolas").FontSize(12);
+
+                                    table.Cell()
+                                        .BorderRight(1).Padding(4)
+                                        .Text("TOW").FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{Math.Round(route.Loadsheet.TOW/1000):F1}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{"!IMP"}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                    table.Cell()
+                                        .Padding(8)
+                                        .Text("......").FontFamily("Consolas").AlignCenter().FontSize(12);
+
+                                    table.Cell()
+                                        .BorderRight(1).Padding(4)
+                                        .Text("LAW").FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{Math.Round(route.Loadsheet.LAW/1000):F1}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                    table.Cell()
+                                        .Padding(4)
+                                        .Text($"{"!IMP"}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                    table.Cell()
+                                        .Padding(8)
+                                        .Text("......").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                });
+
+                            column.Item().Text("ROUTE")
+                                .FontSize(14)
+                                .FontColor(Colors.Black)
+                                .AlignCenter()
+                                .SemiBold()
+                                .FontFamily("Consolas");
+
+                            column.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(100);
+                                    columns.ConstantColumn(100);
+                                    columns.ConstantColumn(100);
+                                });
+
+                                table.Header(header =>
+                                {
+                                    header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("AIRWAY\nNAME\nIDENT").FontFamily("Consolas").FontSize(12).SemiBold();
+                                    header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("\nLAT\nLONG").FontFamily("Consolas").FontSize(12).SemiBold();
+                                    header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("\n\nTAS").FontFamily("Consolas").FontSize(12).SemiBold();
+                                });
+
+                                table.Cell()
+                                    .BorderRight(1).Padding(4)
+                                     .Text($"{""}\n{route.DepartureAirport.name.ToUpper()}\n{route.DepartureAirport.ident}").FontFamily("Consolas").FontSize(12);
+                                table.Cell()
+                                    .Padding(4)
+                                    .Text($"\n{ConvertCoordinates.GetPDFDecimalLatyFormat(route.DepartureAirport.laty)}\n{ConvertCoordinates.GetPDFDecimalLonxFormat(route.DepartureAirport.lonx)}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                table.Cell()
+                                    .Padding(4)
+                                    .Text($"{""}").FontFamily("Consolas").AlignCenter().FontSize(12);
+
+                                table.Cell()
+                                    .BorderRight(1).Padding(4)
+                                    .Text($"{route.Legs[legIndex].Airway.airwayName}\n{route.Legs[legIndex].Waypoint.Name}\n{route.Legs[legIndex].Waypoint.ident}").FontFamily("Consolas").FontSize(12);
+                                table.Cell()
+                                    .Padding(4)
+                                    .Text($"\n{ConvertCoordinates.GetPDFDecimalLatyFormat(route.Legs[legIndex].Waypoint.laty)}\n{ConvertCoordinates.GetPDFDecimalLonxFormat(route.Legs[legIndex].Waypoint.lonx)}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                table.Cell()
+                                    .Padding(4)
+                                    .Text($"\n{route.Legs[legIndex].Waypoint.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                            });
+                        });
+
+                    page.Footer()
+                        .AlignCenter()
+                        .Text(x =>
+                        {
+                            x.Span("Page ");
+                            x.CurrentPageNumber();
+                        });
+                });
+                
+            });
+            
+            document.ShowInCompanion(12500);
         }
     }
 }
