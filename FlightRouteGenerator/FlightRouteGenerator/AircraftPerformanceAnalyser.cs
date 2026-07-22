@@ -36,13 +36,16 @@ namespace FlightRouteGenerator
             route.Loadsheet.ZFW = route.Aircraft.OEW + route.Loadsheet.Payload;
 
             int tripFuel = await FlightSimulator.GetFlightFuelConsumption(route);
+            route.Loadsheet.BlockFuel = tripFuel; // FIXME
+            route.Loadsheet.TOW = route.Loadsheet.ZFW + route.Loadsheet.BlockFuel;
+            route.Loadsheet.LAW = route.Loadsheet.TOW - tripFuel;
 
             return route;
         }
 
         static AircraftPerformanceAnalyser()
         {
-            SupportedAircraftTypes = new HashSet<string> { "A320" };
+            SupportedAircraftTypes = new HashSet<string> { "A320", "B738" };
         }
     }
 }

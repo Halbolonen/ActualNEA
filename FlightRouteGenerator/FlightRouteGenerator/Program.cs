@@ -61,7 +61,7 @@ namespace FlightRouteGenerator
                 route = aStar.GetRouteBetweenAirports(departureAirport, arrivalAirport);
                 route.Aircraft = await Aircraft.CreateAsync(acftTypeInput);
                 Console.WriteLine("\nDone!\n");
-                Console.Write("Adding final touches...");
+                Console.Write("Evaluating aircraft performance...");
 
                 route = await AircraftPerformanceAnalyser.AddVerticalProfileToRoute(route);
                 Console.WriteLine("\nDone!\n");
@@ -81,7 +81,7 @@ namespace FlightRouteGenerator
                             break;
 
                         case 1:
-                            Console.WriteLine("not implemented");
+                            PlanOutputManager.OutputRouteToPDFFile(route);
                             break;
 
                         case 2:

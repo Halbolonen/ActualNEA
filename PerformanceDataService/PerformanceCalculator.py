@@ -255,4 +255,9 @@ def simulate_flight(flight_request: FlightRequest):
     remaining_fuel = round(remaining_fuel)
     sim_result.trip_fuel = trip_fuel_estimate - remaining_fuel
 
+    sim_result.waypoint_id_to_alt[flight_request.waypoint_id_to_track_distance[-1].waypoint_id] = flight_request.arrival_arprt_alt
+    # forcing last waypoint altitude to be ground level at the arrival airport
+    # because different aircraft types may produce different slight inconsistencies 
+    # in distance_travelled vs route_total_distance (to the order of < 0.5 nmi)
+
     return sim_result
