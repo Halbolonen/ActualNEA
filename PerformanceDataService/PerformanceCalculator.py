@@ -109,10 +109,10 @@ def get_fuel_flow(ff_params: FuelFlowParameters):
 
 @performance_calculator.post("/simulate_flight")
 def simulate_flight(flight_request: FlightRequest):
-    M_TO_NMI: float = 0.000539957
-    dt: int = 10
-    cas: int
-    mach: int
+    M_PER_NMI: float = 1852
+    dt: float = 1 
+    cas: int = 0
+    mach: int = 0
     descent_mach: int
     distance_travelled: float = 0
     descent_track_length: float = 0
@@ -129,6 +129,7 @@ def simulate_flight(flight_request: FlightRequest):
     sim_result: SimulatorResult = SimulatorResult(trip_fuel=0, waypoint_id_to_alt={})
 
     constant_cas_climb_vs = api.get_climb_vs_const_cas(flight_request.acft_request)
+    constant_cas_climb = api.get_climb_const_vcas(flight_request.acft_request)
     constant_mach_climb_vs = api.get_climb_vs_const_mach(flight_request.acft_request)
     constant_climb_mach = api.get_climb_const_mach(flight_request.acft_request)
     climb_xover_alt_const_cas = 1000 * api.get_climb_concas_xover_alt(flight_request.acft_request)
@@ -159,7 +160,7 @@ def simulate_flight(flight_request: FlightRequest):
         match phase_of_flight:
             case FlightPhase.DESCENT_TRACK_LENGTH_COMPUTATION:
                 angle_of_climb = math.asin(descent_ff_params.vs / descent_ff_params.tas)
-                descent_track_length += descent_ff_params.tas * dt * math.cos(angle_of_climb) * M_TO_NMI
+                descent_track_length += descent_ff_params.tas * dt * math.cos(angle_of_climb) / M_PER_NMI
                 descent_ff_params.alt += descent_ff_params.vs * dt
                 return
             case _:
@@ -171,13 +172,14 @@ def simulate_flight(flight_request: FlightRequest):
                 ff_params.mass = compute_gross_mass(
                     remaining_fuel, max_fuel_capacity, flight_request.zfw)
                 distance_travelled += (
-                    ff_params.tas * dt * math.cos(angle_of_climb) * M_TO_NMI)
+                    ff_params.tas * dt * math.cos(angle_of_climb) / M_PER_NMI)
                 
-                if (distance_travelled >= next_waypoint_track_length):
-                    sim_result.waypoint_id_to_alt[next_waypoint_id] = round(ff_params.alt)
-                    next_waypoint_index += 1
+                if (math.ceil(distance_travelled) >= next_waypoint_track_length and next_waypoint_index < len(flight_request.waypoint_id_to_track_distance)):
                     next_waypoint_id = flight_request.waypoint_id_to_track_distance[next_waypoint_index].waypoint_id
                     next_waypoint_track_length = flight_request.waypoint_id_to_track_distance[next_waypoint_index].track_distance
+                    sim_result.waypoint_id_to_alt[next_waypoint_id] = round(ff_params.alt)
+                    next_waypoint_index += 1
+
 
                 return
             
@@ -188,6 +190,7 @@ def simulate_flight(flight_request: FlightRequest):
 
     # entering constant cas climb
     ff_params.vs = constant_cas_climb_vs
+    cas = constant_cas_climb
     while (ff_params.alt < climb_xover_alt_const_mach):
         ff_params.tas = cas_to_tas(ff_params.alt, cas)
         run_simulation_tick()
@@ -198,67 +201,55 @@ def simulate_flight(flight_request: FlightRequest):
     while (ff_params.alt < flight_request.cruise_altitude):
         ff_params.tas = mach_to_tas(ff_params.alt, mach)
         run_simulation_tick()
+
+
+    def simulate_descent(params: FuelFlowParameters):
+        nonlocal mach, descent_const_mach_vs, descent_xover_alt_const_mach, descent_xover_alt_const_cas
+        nonlocal finalapproach_cas, finalapproach_vs, flight_request, descent_track_length
+        nonlocal climb_and_cruise_track_length, cas
+        # entering constant mach stage of descent
+        mach = descent_const_mach
+        params.vs = descent_const_mach_vs
+        while (params.alt > descent_xover_alt_const_mach):
+            params.tas = mach_to_tas(params.alt, mach)
+            run_simulation_tick()
+        
+        # entering constant CAS stage of descent
+        cas = descent_const_cas
+        params.vs = descent_const_cas_vs
+        while (params.alt > descent_xover_alt_const_cas):
+            params.tas = cas_to_tas(params.alt, cas)
+            run_simulation_tick()
+
+        # entering final approach stage of descent
+        cas = finalapproach_cas
+        params.vs = finalapproach_vs
+        while (params.alt > flight_request.arrival_arprt_alt):
+            params.tas = cas_to_tas(params.alt, cas)
+            run_simulation_tick()
+
+        climb_and_cruise_track_length = flight_request.route_total_distance - descent_track_length
     
     # getting descent track length before simulating cruise
     phase_of_flight = FlightPhase.DESCENT_TRACK_LENGTH_COMPUTATION
     descent_ff_params = ff_params.model_copy(deep=True)
-    # entering constant mach stage of descent
-    mach = descent_const_mach
-    descent_ff_params.vs = descent_const_mach_vs
-    while (descent_ff_params.alt > descent_xover_alt_const_mach):
-        descent_ff_params.tas = mach_to_tas(descent_ff_params.alt, mach)
-        run_simulation_tick()
-    
-    # entering constant CAS stage of descent
-    cas = descent_const_cas
-    descent_ff_params.vs = descent_const_cas_vs
-    while (descent_ff_params.alt > descent_xover_alt_const_cas):
-        descent_ff_params.tas = round(cas_to_tas(descent_ff_params.alt, cas))
-        run_simulation_tick()
-
-    # entering final approach stage of descent
-    cas = finalapproach_cas
-    descent_ff_params.vs = finalapproach_vs
-    while (descent_ff_params.alt > flight_request.arrival_arprt_alt):
-        ff_params.tas = round(cas_to_tas(descent_ff_params.alt, cas))
-        run_simulation_tick()
-
-    climb_and_cruise_track_length = flight_request.route_total_distance - descent_track_length
+    simulate_descent(descent_ff_params)
 
     # entering cruise
     ff_params.vs = 0
     mach = cruise_mach
     phase_of_flight = FlightPhase.CRUISE
     ff_params.alt = flight_request.cruise_altitude
-    ff_params.tas = round(mach_to_tas(ff_params.alt, mach))
+    ff_params.tas = mach_to_tas(ff_params.alt, mach)
 
     while (distance_travelled < climb_and_cruise_track_length):
         run_simulation_tick();
 
     # simulating descent stages for real this time
     phase_of_flight = FlightPhase.DESCENT
-    # entering constant mach stage of descent
-    mach = descent_const_mach
-    ff_params.vs = descent_const_mach_vs
-    while (ff_params.alt > descent_xover_alt_const_mach):
-        ff_params.tas = round(cas_to_tas(ff_params.alt, cas))
-        run_simulation_tick()
-    
-    # entering constant CAS stage of descent
-    cas = descent_const_cas
-    ff_params.vs = descent_const_cas_vs
-    while (ff_params.alt > descent_xover_alt_const_cas):
-        ff_params.tas = round(cas_to_tas(ff_params.alt, cas))
-        run_simulation_tick()
-
-    # entering final approach stage of descent
-    cas = finalapproach_cas
-    ff_params.vs = finalapproach_vs
-    while (ff_params.alt > flight_request.arrival_arprt_alt):
-        ff_params.tas = round(cas_to_tas(ff_params.alt, cas))
-        run_simulation_tick()
+    simulate_descent(ff_params)
 
     remaining_fuel = round(remaining_fuel)
     sim_result.trip_fuel = trip_fuel_estimate - remaining_fuel
-    print(sim_result.trip_fuel)
+
     return sim_result

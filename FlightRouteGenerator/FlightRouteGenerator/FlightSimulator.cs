@@ -108,6 +108,10 @@ namespace FlightRouteGenerator
 
             foreach (RouteLeg leg in route.Legs)
             {
+                if (leg.Waypoint.WaypointID == "88056")
+                {
+                    Console.WriteLine($"present, trackdist: {trackDistance}");
+                }
                 trackDistance += leg.Length;
                 WaypointIDToTrackDistance.Add(
                     new WaypointTrackDistance
@@ -151,7 +155,6 @@ namespace FlightRouteGenerator
                 else
                 {
                     flightRequest.TripFuel = burnedFuel;
-                    Console.WriteLine(flightRequest.TripFuel);
                     serialisedRequest = JsonSerializer.Serialize(flightRequest);
                 }
             }
@@ -160,20 +163,7 @@ namespace FlightRouteGenerator
 
             foreach (RouteLeg leg in route.Legs)
             {
-                if (simResult.WaypointIDToAlt.ContainsKey(leg.Waypoint.WaypointID))
-                {
-                    leg.Waypoint.Altitude = (int)Math.Round(M_TO_FT * simResult.WaypointIDToAlt[leg.Waypoint.WaypointID]);
-                }
-                else
-                {
-                    legsToRemove.Add(leg);
-                }
-
-            }
-
-            foreach (RouteLeg leg in legsToRemove)
-            {
-                route.Legs.Remove(leg);
+                leg.Waypoint.Altitude = (int)Math.Round(M_TO_FT * simResult.WaypointIDToAlt[leg.Waypoint.WaypointID]);
             }
 
             return burnedFuel;

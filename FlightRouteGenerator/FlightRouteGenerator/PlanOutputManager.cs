@@ -5,6 +5,7 @@ namespace FlightRouteGenerator
 {
     internal class PlanOutputManager
     {
+        private static double M_TO_FT = 3.28084;
 
         private static Dictionary<string, Guid> KnownFolderGUIDs = new Dictionary<string, Guid>
         {
@@ -17,7 +18,7 @@ namespace FlightRouteGenerator
         public static void OutputRouteToConsole(Route route)
         {
             Console.WriteLine("\nYour route:\n");
-            Console.WriteLine($"{route.DepartureAirport.ident}\n---------------");
+            Console.WriteLine($"{route.DepartureAirport.ident} at {Math.Round(route.DepartureAirport.altitude * M_TO_FT)} ft altitude\n---------------");
 
             foreach (RouteLeg leg in route.Legs)
             {
@@ -25,7 +26,7 @@ namespace FlightRouteGenerator
                 {
                     leg.Airway.airwayName = GLOBAL_SETTINGS.DIRECT_FORMAT;
                 }
-                Console.WriteLine($"{leg.Airway.airwayName} {leg.Waypoint.ident} ({leg.Length:F1} nmi) \n---------------");
+                Console.WriteLine($"{leg.Airway.airwayName} {leg.Waypoint.ident} at {leg.Waypoint.Altitude} ft altitude (leg length {leg.Length:F1} nmi) \n---------------");
             }
 
             Console.WriteLine($"\n\nRoute in a format suitable for entry into a flight plotting tool:\n\n");
@@ -51,7 +52,6 @@ namespace FlightRouteGenerator
             string filePath = $"{SHGetKnownFolderPath(KnownFolderGUIDs["Downloads"], 0)}\\{fileName}";
 
             const string DIRECT = "DRCT";
-            string wptAlt = "WPT_ALT_HERE";
             string fileContents = $"I\n1100 Version\nCYCLE {GLOBAL_SETTINGS.AIRAC_CYCLE}\nADEP " +
                 $"{route.DepartureAirport.ident}\nADES {route.ArrivalAirport.ident}\nNUMENR {route.enrouteWaypointCount}\n" +
                 $"{(int)WaypointType.Airport} {route.DepartureAirport.ident} " +
@@ -63,7 +63,7 @@ namespace FlightRouteGenerator
 
                 if (i < route.Legs.Count - 1)
                 {
-                    fileContents += $"{leg.Waypoint.Type} {leg.Waypoint.ident} {leg.Airway.airwayName} {wptAlt} " +
+                    fileContents += $"{leg.Waypoint.Type} {leg.Waypoint.ident} {leg.Airway.airwayName} {leg.Waypoint.Altitude} " +
                         $"{leg.Waypoint.laty} {leg.Waypoint.lonx}\n";
                 }
                 else
@@ -164,8 +164,6 @@ namespace FlightRouteGenerator
             string fileName = $"{route.DepartureAirport.ident}{route.ArrivalAirport.ident}.pln";
             string filePath = $"{SHGetKnownFolderPath(KnownFolderGUIDs["Downloads"], 0)}\\{fileName}";
 
-            double placeholderWptAlt = 67;
-            string crzAlt = "CRZ_ALT_HERE";
             string planTitle = $"{route.DepartureAirport.ident} to {route.ArrivalAirport.ident}";
 
             string departureLLA = GenerateLLA(route.DepartureAirport.laty, route.DepartureAirport.lonx, route.DepartureAirport.altitude);
@@ -182,7 +180,7 @@ namespace FlightRouteGenerator
             XElement flightPlan = new XElement("FlightPlan.FlightPlan",
                 new XElement("Title", planTitle),
                 new XElement("FPType", "IFR"),
-                new XElement("CruisingAlt", crzAlt),
+                new XElement("CruisingAlt", route.CruiseAltitude * M_TO_FT),
                 new XElement("DepartureID", route.DepartureAirport.ident),
                 new XElement("DepartureLLA", departureLLA),
                 new XElement("DestinationID", route.ArrivalAirport.ident),
@@ -200,7 +198,7 @@ namespace FlightRouteGenerator
             {
                 if (!leg.isAirportLeg)
                 {
-                    flightPlan.Add(GenerateRouteLegATCWaypointXElement(leg, placeholderWptAlt));
+                    flightPlan.Add(GenerateRouteLegATCWaypointXElement(leg, leg.Waypoint.Altitude));
                 }
             }
 
