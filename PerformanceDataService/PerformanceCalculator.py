@@ -14,6 +14,10 @@ class WaypointTrackDistance(BaseModel):
     waypoint_id: str
     track_distance: float
 
+class WaypointInfo(BaseModel):
+    tas: float
+    alt: int
+
 class FlightRequest(BaseModel):
     departure_arprt_alt: int
     arrival_arprt_alt: int
@@ -35,7 +39,7 @@ class FuelFlowParameters(BaseModel):
 
 class SimulatorResult(BaseModel):
     trip_fuel: float
-    waypoint_id_to_alt: dict
+    waypoint_id_to_info: dict[str, WaypointInfo]
 
 class FlightPhase(Enum):
     TAKEOFF = 0
@@ -126,7 +130,7 @@ def simulate_flight(flight_request: FlightRequest):
     next_waypoint_index = 0
     next_waypoint_id = flight_request.waypoint_id_to_track_distance[next_waypoint_index].waypoint_id
     next_waypoint_track_length = flight_request.waypoint_id_to_track_distance[next_waypoint_index].track_distance
-    sim_result: SimulatorResult = SimulatorResult(trip_fuel=0, waypoint_id_to_alt={})
+    sim_result: SimulatorResult = SimulatorResult(trip_fuel=0, waypoint_id_to_info={})
 
     constant_cas_climb_vs = api.get_climb_vs_const_cas(flight_request.acft_request)
     constant_cas_climb = api.get_climb_const_vcas(flight_request.acft_request)
@@ -175,7 +179,9 @@ def simulate_flight(flight_request: FlightRequest):
                     ff_params.tas * dt * math.cos(angle_of_climb) / M_PER_NMI)
                 
                 if (distance_travelled >= next_waypoint_track_length and next_waypoint_index < len(flight_request.waypoint_id_to_track_distance)):
-                    sim_result.waypoint_id_to_alt[next_waypoint_id] = round(ff_params.alt)
+                    sim_result.waypoint_id_to_info[next_waypoint_id] = WaypointInfo(alt=0,tas=0)
+                    sim_result.waypoint_id_to_info[next_waypoint_id].alt = round(ff_params.alt)
+                    sim_result.waypoint_id_to_info[next_waypoint_id].tas = ff_params.tas
                     next_waypoint_index += 1
                     if (next_waypoint_index < len(flight_request.waypoint_id_to_track_distance)):
                         next_waypoint_id = flight_request.waypoint_id_to_track_distance[next_waypoint_index].waypoint_id
@@ -255,9 +261,13 @@ def simulate_flight(flight_request: FlightRequest):
     remaining_fuel = round(remaining_fuel)
     sim_result.trip_fuel = trip_fuel_estimate - remaining_fuel
 
-    sim_result.waypoint_id_to_alt[flight_request.waypoint_id_to_track_distance[-1].waypoint_id] = flight_request.arrival_arprt_alt
+    sim_result.waypoint_id_to_info[flight_request.waypoint_id_to_track_distance[-1].waypoint_id] = WaypointInfo(alt=0,tas=0)
+    sim_result.waypoint_id_to_info[flight_request.waypoint_id_to_track_distance[-1].waypoint_id].alt = flight_request.arrival_arprt_alt
+    sim_result.waypoint_id_to_info[flight_request.waypoint_id_to_track_distance[-1].waypoint_id].tas = 0
     # forcing last waypoint altitude to be ground level at the arrival airport
     # because different aircraft types may produce different slight inconsistencies 
     # in distance_travelled vs route_total_distance (to the order of < 0.5 nmi)
+    # also, otherwise the destination airport would still have a TAS value, which
+    # is incorrect as you should not have a TAS value on the ground.
 
     return sim_result

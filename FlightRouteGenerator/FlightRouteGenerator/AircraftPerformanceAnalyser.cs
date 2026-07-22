@@ -45,7 +45,7 @@ namespace FlightRouteGenerator
 
         static AircraftPerformanceAnalyser()
         {
-            SupportedAircraftTypes = new HashSet<string> { "A320", "B738" };
+            SupportedAircraftTypes = new HashSet<string> { "A320", "B738","B77W" };
         }
     }
 }

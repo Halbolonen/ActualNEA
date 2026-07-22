@@ -24,6 +24,6 @@ namespace FlightRouteGenerator
         [JsonPropertyName("trip_fuel")]
         public double TripFuel { get; set; }
         [JsonPropertyName("waypoint_id_to_track_distance")]
-        public List<WaypointTrackDistance> WaypointIDToTrackDistance { get; set; }
+        public List<PDS_WaypointTrackDistance> WaypointIDToTrackDistance { get; set; }
     }
 }

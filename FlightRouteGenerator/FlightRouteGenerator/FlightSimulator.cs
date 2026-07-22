@@ -103,13 +103,13 @@ namespace FlightRouteGenerator
             const double M_TO_FT = 3.28084;
 
             double trackDistance = 0;
-            List<WaypointTrackDistance> WaypointIDToTrackDistance = new List<WaypointTrackDistance>();
+            List<PDS_WaypointTrackDistance> WaypointIDToTrackDistance = new List<PDS_WaypointTrackDistance>();
 
             foreach (RouteLeg leg in route.Legs)
             {
                 trackDistance += leg.Length;
                 WaypointIDToTrackDistance.Add(
-                    new WaypointTrackDistance
+                    new PDS_WaypointTrackDistance
                     {
                         WaypointID = leg.Waypoint.WaypointID,
                         TrackDistance = trackDistance
@@ -138,8 +138,9 @@ namespace FlightRouteGenerator
 
             while (!fuelOptimal)
             {
-                simResult = JsonSerializer.Deserialize<PDS_SimulatorResult>(
-                       await PerformanceDataService.GetCalculation("simulate_flight", HttpMethod.Post, serialisedRequest));
+                string flightData = await PerformanceDataService.GetCalculation("simulate_flight", HttpMethod.Post, serialisedRequest);
+                simResult = JsonSerializer.Deserialize<PDS_SimulatorResult>(flightData
+                       );
 
                 burnedFuel = simResult.TripFuel;
 
@@ -158,7 +159,9 @@ namespace FlightRouteGenerator
 
             foreach (RouteLeg leg in route.Legs)
             {
-                leg.Waypoint.Altitude = (int)Math.Round(M_TO_FT * simResult.WaypointIDToAlt[leg.Waypoint.WaypointID]);
+                PDS_WaypointInfo wpInfo = simResult.WaypointIDToInfo[leg.Waypoint.WaypointID];
+                leg.Waypoint.Altitude = (int)Math.Round(M_TO_FT * wpInfo.Altitude);
+                leg.Waypoint.TAS = wpInfo.TAS;
             }
 
             return burnedFuel;

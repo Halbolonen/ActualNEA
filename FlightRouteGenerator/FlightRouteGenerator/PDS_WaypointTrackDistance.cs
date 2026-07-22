@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FlightRouteGenerator
 {
-    internal class WaypointTrackDistance
+    internal class PDS_WaypointTrackDistance
     {
         [JsonPropertyName("waypoint_id")]
         public string WaypointID { get; set; }
