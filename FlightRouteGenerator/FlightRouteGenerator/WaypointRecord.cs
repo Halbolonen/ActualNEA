@@ -13,6 +13,8 @@ namespace FlightRouteGenerator
         public double laty { get; set; }
         private string waypointID;
         public int Type { get; set; }
+        public int Altitude { get; set; }
+        // in feet
         public string WaypointID {
             get
             {
@@ -24,8 +26,6 @@ namespace FlightRouteGenerator
                 waypointID = value;
             } 
         }
-        public int altitude { get; set; }
-        // in ft
 
         public WaypointRecord()
         {

@@ -100,6 +100,24 @@ namespace FlightRouteGenerator
 
         public static async Task<int> GetFlightFuelConsumption(Route route)
         {
+            int burnedFuel = route.Aircraft.MaxFuelCapacity / 2;
+            const double M_TO_FT = 3.28084;
+
+            double trackDistance = 0;
+            List<WaypointTrackDistance> WaypointIDToTrackDistance = new List<WaypointTrackDistance>();
+
+            foreach (RouteLeg leg in route.Legs)
+            {
+                trackDistance += leg.Length;
+                WaypointIDToTrackDistance.Add(
+                    new WaypointTrackDistance
+                    {
+                        WaypointID = leg.Waypoint.WaypointID,
+                        TrackDistance = trackDistance
+                    }
+                    );
+            }
+
             PDS_FlightRequest flightRequest = new PDS_FlightRequest
             {
                 DepartureAirportAltitude = route.DepartureAirport.altitude,
@@ -110,189 +128,55 @@ namespace FlightRouteGenerator
                 },
                 ZFW = route.Loadsheet.ZFW,
                 CruiseAltitude = route.CruiseAltitude,
-                RouteTotalDistance = route.TotalDistance
+                RouteTotalDistance = route.TotalDistance,
+                TripFuel = burnedFuel,
+                WaypointIDToTrackDistance = WaypointIDToTrackDistance
             };
 
             string serialisedRequest = JsonSerializer.Serialize(flightRequest);
+            bool fuelOptimal = false;
+            PDS_SimulatorResult simResult = new PDS_SimulatorResult();
 
-            return (int)Math.Round(
-                double.Parse(
-                    await PerformanceDataService.GetCalculation("get_flight_fuel_consumption", HttpMethod.Post, serialisedRequest)
-                    )
-                );
-        }
-
-        /*public static async Task<int> GetFlightFuelConsumption(Route route)
-        {
-            const double M_TO_NMI = 0.000539957;
-            const int dt = 10;
-            // seconds
-            int cas;
-            // Calibrated AirSpeed, in metres/second.
-            double mach;
-            // mach number
-            double descentMach;
-            // mach number used in descent
-            double distanceTravelled = 0;
-            // in nmi
-            double descentTrackLength = 0;
-            // in nmi
-            double climbAndCruiseTrackLength;
-            // in nmi
-            //int blockFuelEstimate = route.Aircraft.MaxFuelCapacity / 2;
-            int blockFuelEstimate = 9050;
-            double remainingFuel = blockFuelEstimate;
-            PDS_FuelFlowParameters descentFFParams = new PDS_FuelFlowParameters();
-            Console.WriteLine($"remaining fuel before flight: {remainingFuel} kg");
-
-            FlightPhase phaseOfFlight = FlightPhase.Climb;
-            cas = route.Aircraft.InitialClimbCAS;
-
-            PDS_FuelFlowParameters ffParams = new PDS_FuelFlowParameters
+            while (!fuelOptimal)
             {
-                alt = route.DepartureAirport.altitude,
-                vs = route.Aircraft.InitialClimbVS,
-                mass = ComputeGrossMass(remainingFuel, route),
-                aircraft_type = route.Aircraft.ICAOIdent
-            };
+                simResult = JsonSerializer.Deserialize<PDS_SimulatorResult>(
+                       await PerformanceDataService.GetCalculation("simulate_flight", HttpMethod.Post, serialisedRequest));
 
-            async Task RunSimulationTick()
-            {
-                double flow;
-                double angleOfClimb;
-                switch (phaseOfFlight)
+                burnedFuel = simResult.TripFuel;
+
+                if (flightRequest.TripFuel - burnedFuel < 5)
                 {
-                    case FlightPhase.DescentTrackLengthComputation:
-                        angleOfClimb = Math.Asin(descentFFParams.vs / descentFFParams.tas);
-                        descentTrackLength += descentFFParams.tas * dt * Math.Cos(angleOfClimb) * M_TO_NMI;
-                        descentFFParams.alt += descentFFParams.vs * dt;
-                        break;
-                    default:
-                        angleOfClimb = Math.Asin(ffParams.vs / ffParams.tas);
-                        flow = await GetFuelFlow(ffParams);
+                    fuelOptimal = true;
+                }
+                else
+                {
+                    flightRequest.TripFuel = burnedFuel;
+                    Console.WriteLine(flightRequest.TripFuel);
+                    serialisedRequest = JsonSerializer.Serialize(flightRequest);
+                }
+            }
 
-                        remainingFuel -= flow * dt;
-                        //Console.WriteLine($"{flow} - [{phaseOfFlight}]");
-                        ffParams.alt += ffParams.vs * dt;
-                        ffParams.mass = ComputeGrossMass(remainingFuel, route);
-                        distanceTravelled += ffParams.tas * dt * Math.Cos(angleOfClimb) * M_TO_NMI;
+            List<RouteLeg> legsToRemove = new List<RouteLeg>();
 
-                        break;
+            foreach (RouteLeg leg in route.Legs)
+            {
+                if (simResult.WaypointIDToAlt.ContainsKey(leg.Waypoint.WaypointID))
+                {
+                    leg.Waypoint.Altitude = (int)Math.Round(M_TO_FT * simResult.WaypointIDToAlt[leg.Waypoint.WaypointID]);
+                }
+                else
+                {
+                    legsToRemove.Add(leg);
                 }
 
-
             }
 
-            // initial vertical speed & cas
-
-            while (ffParams.alt < route.Aircraft.ClimbXOVerAltConstantCAS)
+            foreach (RouteLeg leg in legsToRemove)
             {
-                ffParams.tas = (int)Math.Round(CAStoTAS(ffParams.alt, cas));
-                await RunSimulationTick();
+                route.Legs.Remove(leg);
             }
 
-            // entering constant cas climb
-            ffParams.vs = route.Aircraft.ConstantCASClimbVS;
-            cas = route.Aircraft.ConstantCASClimbCAS;
-
-            while (ffParams.alt < route.Aircraft.ClimbXOverAltConstantMach)
-            {
-                ffParams.tas = (int)Math.Round(CAStoTAS(ffParams.alt, cas));
-                await RunSimulationTick();
-            }
-
-            // entering constant mach climb
-            ffParams.vs = route.Aircraft.ConstantMachClimbVS;
-            mach = route.Aircraft.ConstantMachClimbMach;
-
-            while (ffParams.alt < route.CruiseAltitude)
-            {
-                ffParams.tas = (int)Math.Round(MachToTAS(ffParams.alt, mach));
-                await RunSimulationTick();
-            }
-
-            // getting descent track length before simulating cruise
-            phaseOfFlight = FlightPhase.DescentTrackLengthComputation;
-            descentFFParams = ffParams;
-            // entering constant mach stage of descent
-            mach = route.Aircraft.DescentConstMach;
-            descentFFParams.vs = route.Aircraft.DescentConstMachVS;
-            while (descentFFParams.alt > route.Aircraft.DescentXOverAltConstMach)
-            {
-                descentFFParams.tas = (int)Math.Round(MachToTAS(descentFFParams.alt, mach));
-                await RunSimulationTick();
-            }
-
-            // entering constant CAS stage of descent
-            cas = route.Aircraft.DescentConstCAS;
-            descentFFParams.vs = route.Aircraft.DescentConstCASVS;
-            while (descentFFParams.alt > route.Aircraft.DescentXOverAltConstCAS)
-            {
-                descentFFParams.tas = (int)Math.Round(CAStoTAS(descentFFParams.alt, cas));
-                await RunSimulationTick();
-            }
-
-            // entering final approach stage of descent
-            cas = route.Aircraft.FinalApproachCAS;
-            descentFFParams.vs = route.Aircraft.FinalApproachVS;
-            while (descentFFParams.alt > route.ArrivalAirport.altitude)
-            {
-                ffParams.tas = (int)Math.Round(CAStoTAS(descentFFParams.alt, cas));
-                await RunSimulationTick();
-            }
-
-            climbAndCruiseTrackLength = route.TotalDistance - descentTrackLength;
-
-            // entering cruise
-            int cruiseCounter = 0;
-            ffParams.vs = 0;
-            mach = route.Aircraft.CruiseMach;
-            phaseOfFlight = FlightPhase.Cruise;
-            ffParams.alt = route.CruiseAltitude;
-            ffParams.tas = (int)Math.Round(MachToTAS(ffParams.alt, mach));
-
-            while (distanceTravelled < climbAndCruiseTrackLength)
-            {
-                cruiseCounter += dt;
-                await RunSimulationTick();
-            }
-
-            // simulating descent stages for real this time
-            // entering constant mach stage of descent
-            phaseOfFlight = FlightPhase.Descent;
-            mach = route.Aircraft.DescentConstMach;
-            ffParams.vs = route.Aircraft.DescentConstMachVS;
-            while (ffParams.alt > route.Aircraft.DescentXOverAltConstMach)
-            {
-                ffParams.tas = (int)Math.Round(MachToTAS(ffParams.alt, mach));
-                await RunSimulationTick();
-            }
-
-            // entering constant CAS stage of descent
-            cas = route.Aircraft.DescentConstCAS;
-            ffParams.vs = route.Aircraft.DescentConstCASVS;
-            while (ffParams.alt > route.Aircraft.DescentXOverAltConstCAS)
-            {
-                ffParams.tas = (int)Math.Round(CAStoTAS(ffParams.alt, cas));
-                await RunSimulationTick();
-            }
-
-            // entering final approach stage of descent
-            phaseOfFlight = FlightPhase.FinalApproach;
-            cas = route.Aircraft.FinalApproachCAS;
-            ffParams.vs = route.Aircraft.FinalApproachVS;
-            while (ffParams.alt > route.ArrivalAirport.altitude)
-            {
-                ffParams.tas = (int)Math.Round(CAStoTAS(ffParams.alt, cas));
-                await RunSimulationTick();
-            }
-
-            remainingFuel = Math.Round(remainingFuel);
-
-            Console.WriteLine($"remaining fuel after flight: {remainingFuel} kg");
-
-            return 0;
+            return burnedFuel;
         }
-    */
     }
 }

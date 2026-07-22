@@ -21,5 +21,9 @@ namespace FlightRouteGenerator
         public int CruiseAltitude { get; set; }
         [JsonPropertyName("route_total_distance")]
         public double RouteTotalDistance { get; set; }
+        [JsonPropertyName("trip_fuel")]
+        public int TripFuel { get; set; }
+        [JsonPropertyName("waypoint_id_to_track_distance")]
+        public List<WaypointTrackDistance> WaypointIDToTrackDistance { get; set; }
     }
 }

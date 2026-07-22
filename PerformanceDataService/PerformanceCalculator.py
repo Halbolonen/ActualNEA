@@ -10,6 +10,10 @@ performance_calculator = FastAPI()
 class AircraftRequest(BaseModel):
     aircraft_type: str
 
+class WaypointTrackDistance(BaseModel):
+    waypoint_id: str
+    track_distance: float
+
 class FlightRequest(BaseModel):
     departure_arprt_alt: int
     arrival_arprt_alt: int
@@ -17,6 +21,8 @@ class FlightRequest(BaseModel):
     zfw: int
     cruise_altitude: int
     route_total_distance: float
+    trip_fuel: int
+    waypoint_id_to_track_distance: list[WaypointTrackDistance]
 
 class FuelFlowParameters(BaseModel):
     mass: int
@@ -26,6 +32,10 @@ class FuelFlowParameters(BaseModel):
     acc: int = 0
     dT: int = 0
     aircraft_type: str
+
+class SimulatorResult(BaseModel):
+    trip_fuel: int
+    waypoint_id_to_alt: dict
 
 class FlightPhase(Enum):
     TAKEOFF = 0
@@ -97,8 +107,8 @@ def compute_gross_mass(fuel_mass: float, max_fuel_capacity: int, zfw: int):
 def get_fuel_flow(ff_params: FuelFlowParameters):
     return api.get_fuelflow(ff_params)
 
-@performance_calculator.post("/get_flight_fuel_consumption")
-def get_flight_fuel_consumption(flight_request: FlightRequest):
+@performance_calculator.post("/simulate_flight")
+def simulate_flight(flight_request: FlightRequest):
     M_TO_NMI: float = 0.000539957
     dt: int = 10
     cas: int
@@ -107,12 +117,16 @@ def get_flight_fuel_consumption(flight_request: FlightRequest):
     distance_travelled: float = 0
     descent_track_length: float = 0
     climb_and_cruise_track_length: float
-    block_fuel_estimate: int = api.get_aircraft_fuel_capacity(flight_request.acft_request) / 2
-    remaining_fuel: float = block_fuel_estimate 
+    trip_fuel_estimate: int = flight_request.trip_fuel
+    remaining_fuel: float = trip_fuel_estimate 
     descent_ff_params: FuelFlowParameters
     phase_of_flight: FlightPhase = FlightPhase.CLIMB
     cas = api.get_climb_init_vcas(flight_request.acft_request)
     max_fuel_capacity = api.get_aircraft_fuel_capacity(flight_request.acft_request)
+    next_waypoint_index = 0
+    next_waypoint_id = flight_request.waypoint_id_to_track_distance[next_waypoint_index].waypoint_id
+    next_waypoint_track_length = flight_request.waypoint_id_to_track_distance[next_waypoint_index].track_distance
+    sim_result: SimulatorResult = SimulatorResult(trip_fuel=0, waypoint_id_to_alt={})
 
     constant_cas_climb_vs = api.get_climb_vs_const_cas(flight_request.acft_request)
     constant_mach_climb_vs = api.get_climb_vs_const_mach(flight_request.acft_request)
@@ -137,7 +151,8 @@ def get_flight_fuel_consumption(flight_request: FlightRequest):
         tas = cas_to_tas(flight_request.departure_arprt_alt, cas)
     )
     def run_simulation_tick():
-        nonlocal remaining_fuel, distance_travelled, descent_track_length
+        nonlocal remaining_fuel, distance_travelled, descent_track_length, sim_result, next_waypoint_id
+        nonlocal next_waypoint_index, next_waypoint_track_length
         flow: float
         angle_of_climb: float
 
@@ -157,6 +172,13 @@ def get_flight_fuel_consumption(flight_request: FlightRequest):
                     remaining_fuel, max_fuel_capacity, flight_request.zfw)
                 distance_travelled += (
                     ff_params.tas * dt * math.cos(angle_of_climb) * M_TO_NMI)
+                
+                if (distance_travelled >= next_waypoint_track_length):
+                    sim_result.waypoint_id_to_alt[next_waypoint_id] = round(ff_params.alt)
+                    next_waypoint_index += 1
+                    next_waypoint_id = flight_request.waypoint_id_to_track_distance[next_waypoint_index].waypoint_id
+                    next_waypoint_track_length = flight_request.waypoint_id_to_track_distance[next_waypoint_index].track_distance
+
                 return
             
     # initial vertical speed & cas
@@ -237,8 +259,6 @@ def get_flight_fuel_consumption(flight_request: FlightRequest):
         run_simulation_tick()
 
     remaining_fuel = round(remaining_fuel)
-
-    return remaining_fuel
-
-    # TODO: use newton-raphson to make this find an optimal fuel load
-    # (or error correction if newton-raphson turns out to be too complex)
+    sim_result.trip_fuel = trip_fuel_estimate - remaining_fuel
+    print(sim_result.trip_fuel)
+    return sim_result

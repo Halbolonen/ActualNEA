@@ -20,12 +20,8 @@ namespace FlightRouteGenerator
                     aircraft_type = route.Aircraft.ICAOIdent
                 });
 
-            int maxFuelCapacity = int.Parse(await PerformanceDataService.GetResponse(
-                "get_aircraft_fuel_capacity", HttpMethod.Post, serialisedRequest
-                ));
+            int maxFuelCapacity = route.Aircraft.MaxFuelCapacity;
             // max fuel capacity in kilograms
-
-            
 
             route.Loadsheet = new LoadsheetInfo
             {
@@ -39,11 +35,7 @@ namespace FlightRouteGenerator
             route.Loadsheet.Payload = route.Loadsheet.Pax * PAX_AND_CARRY_ON_MASS + route.Loadsheet.BagsAndCargo;
             route.Loadsheet.ZFW = route.Aircraft.OEW + route.Loadsheet.Payload;
 
-            int consumedFuel = await FlightSimulator.GetFlightFuelConsumption(
-                route
-                );
-
-            Console.WriteLine($"remaining fuel: {consumedFuel} kg");
+            int tripFuel = await FlightSimulator.GetFlightFuelConsumption(route);
 
             return route;
         }
