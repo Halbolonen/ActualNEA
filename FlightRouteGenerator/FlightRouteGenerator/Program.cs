@@ -71,6 +71,7 @@ namespace FlightRouteGenerator
 
                 List<string> outputOptions = new List<string> {"Console","PDF File","X-Plane route file (.fms)","Microsoft Flight Simulator route file (.pln)"};
                 HashSet<int> choices = MultipleChoiceMenu.GetUserChoice(outputOptions);
+                List<string> outputSuccessMessages = new List<string>();
 
                 foreach (int choice in choices)
                 {
@@ -81,17 +82,22 @@ namespace FlightRouteGenerator
                             break;
 
                         case 1:
-                            PlanOutputManager.OutputRouteToPDFFile(route);
+                            outputSuccessMessages.Add(PlanOutputManager.OutputRouteToPDFFile(route));
                             break;
 
                         case 2:
-                            PlanOutputManager.OutputRouteToFMSFile(route);
+                            outputSuccessMessages.Add(PlanOutputManager.OutputRouteToFMSFile(route));
                             break;
 
                         case 3:
-                            PlanOutputManager.OutputRouteToPLNFile(route);
+                            outputSuccessMessages.Add(PlanOutputManager.OutputRouteToPLNFile(route));
                             break;
                     }
+                }
+
+                foreach (string msg in outputSuccessMessages)
+                {
+                    Console.WriteLine(msg);
                 }
             }
             catch (RouteDiscontinuityException)
