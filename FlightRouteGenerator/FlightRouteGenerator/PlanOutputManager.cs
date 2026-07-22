@@ -388,7 +388,7 @@ ZFW: {route.Loadsheet.ZFW} kg
                                     case "departureAirport":
                                         table.Cell()
                                            .BorderRight(1).Padding(4)
-                                           .Text($"{""}\n{route.DepartureAirport.name.ToUpper()}\n{route.DepartureAirport.ident}").FontFamily("Consolas").FontSize(12);
+                                           .Text($"----\n{route.DepartureAirport.name.ToUpper()}\n{route.DepartureAirport.ident}").FontFamily("Consolas").FontSize(12);
                                         table.Cell()
                                             .Padding(4)
                                             .Text($"\n{ConvertCoordinates.GetPDFDecimalLatyFormat(route.DepartureAirport.laty)}\n{ConvertCoordinates.GetPDFDecimalLonxFormat(route.DepartureAirport.lonx)}").AlignCenter().FontFamily("Consolas").FontSize(12);
@@ -403,7 +403,7 @@ ZFW: {route.Loadsheet.ZFW} kg
                                         table.Cell()
                                            .BorderBottom(1)
                                            .BorderRight(1).Padding(4)
-                                           .Text($"{""}\n{route.ArrivalAirport.name.ToUpper()}\n{route.ArrivalAirport.ident}").FontFamily("Consolas").FontSize(12);
+                                           .Text($"----\n{route.ArrivalAirport.name.ToUpper()}\n{route.ArrivalAirport.ident}").FontFamily("Consolas").FontSize(12);
                                         table.Cell()
                                             .BorderBottom(1)
                                             .Padding(4)
@@ -444,6 +444,8 @@ ZFW: {route.Loadsheet.ZFW} kg
                                     .Padding(4);
                             }
 
+                            column.Item().Text($"Total ground distance: {route.TotalDistance:F0} nmi").FontFamily("Consolas").FontSize(12).AlignLeft();
+
                             column.Item().Table(table =>
                             {
                                 table.ColumnsDefinition(columns =>
@@ -476,7 +478,7 @@ ZFW: {route.Loadsheet.ZFW} kg
 
             });
 
-            bool debugLiveView = false;
+            bool debugLiveView = true;
 
             if (debugLiveView)
             {

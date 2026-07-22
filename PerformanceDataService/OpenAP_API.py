@@ -157,12 +157,12 @@ def get_enroute_fuelflow(ff_params: FuelFlowParameters):
 
 def get_drag_model(acft_type: str):
     if acft_type not in drag_models:
-        drag_models[acft_type] = Drag(acft_type)
+        drag_models[acft_type] = Drag(ac=acft_type, use_synonym=True)
     return drag_models[acft_type]
 
 def get_fuelflow_model(acft_type: str):
     if acft_type not in fuelflow_models:
-        fuelflow_models[acft_type] = FuelFlow(acft_type)
+        fuelflow_models[acft_type] = FuelFlow(ac=acft_type, use_synonym=True)
     return fuelflow_models[acft_type]
 
 @api.post("/get_fuelflow")
