@@ -16,7 +16,9 @@ namespace FlightRouteGenerator
         public int Altitude { get; set; }
         // in feet
         public double TAS { get; set; }
-        // True AirSpeed, in knots
+        // True AirSpeed for the aircraft to reach at this waypoint, in knots
+        public string Name { get; set; }
+        
         public string WaypointID {
             get
             {

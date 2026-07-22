@@ -31,7 +31,7 @@ namespace FlightRouteGenerator
             {
                 case "waypoint":
                     command =
-                @"SELECT waypoint_id, ident, lonx, laty 
+                @"SELECT waypoint_id, ident, lonx, laty, name
                 FROM waypoint";
                     break;
 
@@ -76,6 +76,14 @@ namespace FlightRouteGenerator
                         wpRecord.ident = (string)dataReader["ident"];
                         wpRecord.laty = Convert.ToDouble(dataReader["laty"]);
                         wpRecord.lonx = Convert.ToDouble(dataReader["lonx"]);
+                        if (!dataReader.IsDBNull(4))
+                        {
+                            wpRecord.Name = (string)dataReader["name"];
+                        }
+                        else
+                        {
+                            wpRecord.Name = "";
+                        }
 
                         recordDict.Add(wpRecord.WaypointID, wpRecord);
                         break;
