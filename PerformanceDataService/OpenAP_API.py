@@ -195,13 +195,13 @@ def get_fuelflow(in_ff_params: FuelFlowParameters):
     ff_params.alt = ff_params.alt * M_TO_FT
     ff_params.vs = ff_params.vs * MpS_TO_FpM
     drag_model = get_drag_model(ff_params.aircraft_type)
-    climb_drag = drag_model.clean(ff_params.mass, ff_params.tas, ff_params.alt, ff_params.vs)
+    drag = drag_model.clean(ff_params.mass, ff_params.tas, ff_params.alt, ff_params.vs)
     weight_component_against_thrust = ff_params.mass * g * math.sin(angle_of_climb)
-    climb_thrust = climb_drag + weight_component_against_thrust
+    thrust = drag + weight_component_against_thrust
 
     fuelflow_model = get_fuelflow_model(ff_params.aircraft_type)
     flow = fuelflow_model.at_thrust(
-        total_ac_thrust=climb_thrust
+        total_ac_thrust=thrust
     )
 
     return flow

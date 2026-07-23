@@ -37,6 +37,14 @@ class FuelFlowParameters(BaseModel):
     dT: int = 0
     aircraft_type: str
 
+class TaxiFuelParameters(BaseModel):
+    mass: int
+    tas: float
+    alt: float
+    time: int
+    # in minutes
+    aircraft_type: str
+
 class SimulatorResult(BaseModel):
     trip_fuel: float
     waypoint_id_to_info: dict[str, WaypointInfo]
@@ -271,3 +279,17 @@ def simulate_flight(flight_request: FlightRequest):
     # is incorrect as you should not have a TAS value on the ground.
 
     return sim_result
+
+@performance_calculator.post("/get_taxi_fuel")
+def get_taxi_fuel(tf_params: TaxiFuelParameters):
+    ff_params: FuelFlowParameters = FuelFlowParameters(
+        mass=tf_params.mass,
+        tas=tf_params.tas,
+        alt=tf_params.alt,
+        vs=0,
+        acc=0,
+        dT=0,
+        aircraft_type=tf_params.aircraft_type
+    )
+    flow: float = api.get_fuelflow(ff_params)
+    return flow * tf_params.time * 60

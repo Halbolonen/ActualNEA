@@ -68,12 +68,14 @@ namespace FlightRouteGenerator
             int paxUnderMZFW = Math.Min(MZFW / PAYLOAD_PER_PAX, route.Aircraft.PassengerLoadLimits.high);
             int payloadUnderMZFW = paxUnderMZFW * PAYLOAD_PER_PAX;
 
-            route.Loadsheet.BagsAndCargo = route.Loadsheet.Pax * BAGS_AND_CARGO_PER_PAX;
-            route.Loadsheet.Payload = route.Loadsheet.Pax * PAX_AND_CARRY_ON_MASS + route.Loadsheet.BagsAndCargo;
+            route.Loadsheet.BagsAndCargo = paxUnderMZFW * BAGS_AND_CARGO_PER_PAX;
+            route.Loadsheet.Payload = payloadUnderMZFW;
             route.Loadsheet.ZFW = route.Aircraft.OEW + route.Loadsheet.Payload;
 
             double tripFuel = await FlightSimulator.GetFlightFuelConsumption(route);
-            route.Loadsheet.BlockFuel = tripFuel; // FIXME
+            
+
+
             route.Loadsheet.TOW = route.Loadsheet.ZFW + route.Loadsheet.BlockFuel;
             route.Loadsheet.LAW = route.Loadsheet.TOW - tripFuel;
 
