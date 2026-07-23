@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
 namespace FlightRouteGenerator
@@ -8,19 +9,8 @@ namespace FlightRouteGenerator
         public string ICAOIdent { get; set; }
         public int TakeoffWeight { get; set; }
         // in kilograms
-        public int ClimbCAS { get; set; }
-        // Climb Calibrated AirSpeed, in knots
-        public int InitVS { get; set; }
-        // Initial Vertical Speed, in feet per minute
-        public int PreConstantCAS_VS { get; set; }
-        // vertical speed before constant Calibrated
-        // AirSpeed, in feet per minute
-        public int ConstantCAS_VS { get; set; }
-        // vertical speed during constant Calibrated
-        // AirSpeed, in feet per minute.
-        public int ConstantMach_VS { get; set; }
-        // vertical speed during constant Mach, in
-        // feet per minute.
+        public int MTOW { get; set; }
+        // Maximum TakeOff Weight, in kilograms
         public struct PassengerLoadRange
         {
             public int high { get; set; }
@@ -28,6 +18,14 @@ namespace FlightRouteGenerator
             public int max { get; set; }
         }
         public PassengerLoadRange PassengerLoadLimits { get; set; }
+        public struct CruiseAltitudeRange
+        {
+            [JsonPropertyName("std_operations")]
+            public double StandardOperations { get; set; }
+            [JsonPropertyName("ceiling")]
+            public double Ceiling { get; set; }
+        }
+        public CruiseAltitudeRange CruiseAltitudeLimits { get; set; }
         public int OEW { get; set; }
         // Operational Empty Weight, in kilograms
         public int MaxFuelCapacity { get; set; }
@@ -43,9 +41,9 @@ namespace FlightRouteGenerator
         // vertical speed in stage of climb with constant
         // mach number, in m/s
         public int ClimbXOVerAltConstantCAS { get; set; }
-        // altitude in the climb when aircraft assumes constant CAS in m
+        // altitude in the climb when aircraft assumes constant CAS in metres
         public int ClimbXOverAltConstantMach { get; set; }
-        // altitude in the climb when aircraft assumes constant mach number in m
+        // altitude in the climb when aircraft assumes constant mach number in metres
         public int InitialClimbCAS { get; set; }
         // initial Calibrated AirSpeed in m/s
         public int ConstantCASClimbCAS { get; set; }
@@ -122,6 +120,9 @@ namespace FlightRouteGenerator
             aircraft.PassengerLoadLimits = JsonSerializer.Deserialize<PassengerLoadRange>(
                 await PerformanceDataService.GetResponse("get_aircraft_passenger_load_range", HttpMethod.Post, aircraft.SerialisedAircraftInfo)
                 );
+            aircraft.CruiseAltitudeLimits = JsonSerializer.Deserialize<CruiseAltitudeRange>(
+                await PerformanceDataService.GetResponse("get_aircraft_cruise_alt_range", HttpMethod.Post, aircraft.SerialisedAircraftInfo)
+                );
             aircraft.OEW = await aircraft.GetIntDatapointFromPDS("get_aircraft_oew");
             aircraft.MaxFuelCapacity = await aircraft.GetIntDatapointFromPDS("get_aircraft_fuel_capacity");
             aircraft.InitialClimbVS = await aircraft.GetIntDatapointFromPDS("get_initclimb_vs");
@@ -141,6 +142,7 @@ namespace FlightRouteGenerator
             aircraft.DescentXOverAltConstCAS = 1000 * await aircraft.GetIntDatapointFromPDS("get_descent_xover_alt_const_cas");
             aircraft.FinalApproachCAS = await aircraft.GetIntDatapointFromPDS("get_finalapp_vcas");
             aircraft.FinalApproachVS = await aircraft.GetIntDatapointFromPDS("get_finalapp_vs");
+            
             
             return aircraft;
         }

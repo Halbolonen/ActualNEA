@@ -22,8 +22,6 @@ namespace FlightRouteGenerator
         public Route()
         {
             enrouteWaypointCount = 0;
-            // FIXME: temporary arbitrary cruise altitude
-            CruiseAltitude = 10668;
         }
     }
 }

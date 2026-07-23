@@ -18,6 +18,10 @@ class FuelFlowParameters(BaseModel):
     dT: int
     aircraft_type: str
 
+class CruiseAltitudeRange(BaseModel):
+    std_operations: float
+    ceiling: float
+
 drag_models = {}
 fuelflow_models = {}
 
@@ -28,6 +32,16 @@ def root():
 @api.post("/get_aircraft_info")
 def get_aircraft_info(request: AircraftRequest):
     return prop.aircraft(request.aircraft_type)
+
+@api.post("/get_aircraft_cruise_alt_range")
+def get_aircraft_cruise_alt_range(request: AircraftRequest):
+    acft_info = get_aircraft_info(request)
+    range: CruiseAltitudeRange = CruiseAltitudeRange(
+        std_operations=acft_info["cruise"]["height"],
+        ceiling=acft_info["ceiling"]
+    )
+
+    return range
 
 @api.post("/get_aircraft_fuel_capacity")
 def get_aircraft_fuel_capacity(request: AircraftRequest):
@@ -191,3 +205,4 @@ def get_fuelflow(in_ff_params: FuelFlowParameters):
     )
 
     return flow
+

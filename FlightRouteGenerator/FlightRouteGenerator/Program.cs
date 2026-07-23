@@ -6,23 +6,18 @@ namespace FlightRouteGenerator
 {
     class Program
     {
-        private static async Task RunProgram()
+        private static async Task RestartProgram()
         {
-            if (!NavdataInteractor.Initialised)
-            {
-                Console.Write("Initialising datasets, please wait...");
-                NavdataInteractor.Initialise();
-                Console.WriteLine("\nDone!\n");
-            }
-            if (!PerformanceDataService.initialisationStarted)
-            {
-                Console.Write("Initialising Performance Data Service, please wait...");
-                await PerformanceDataService.Initialise();
-                Console.WriteLine("\nDone!\n");
-            }
-            Console.Clear();
+            Console.WriteLine("\nPress any key to restart...");
+            Console.ReadKey();
+            await StartProgram();
+        }
 
-            Console.Write("Welcome to the Flight Route Planner!\nEnter departure airport ICAO code: ");
+        private static async Task CreateNewFlightPlan()
+        {
+            Console.WriteLine("\nCREATING A NEW FLIGHT PLAN");
+            Console.Write("\nEnter departure airport ICAO code: ");
+            Console.CursorVisible = true;
             string departureInput = Console.ReadLine().ToUpper();
             Console.Write("Enter arrival airport ICAO code: ");
             string arrivalInput = Console.ReadLine().ToUpper();
@@ -69,8 +64,8 @@ namespace FlightRouteGenerator
                 Console.Clear();
                 Console.WriteLine("Use the menu to select the formats you want your flight plan to be outputted in.\n");
 
-                List<string> outputOptions = new List<string> {"Console","PDF File","X-Plane route file (.fms)","Microsoft Flight Simulator route file (.pln)"};
-                HashSet<int> choices = MultipleChoiceMenu.GetUserChoice(outputOptions);
+                List<string> outputOptions = new List<string> { "Console", "PDF File", "X-Plane route file (.fms)", "Microsoft Flight Simulator route file (.pln)" };
+                HashSet<int> choices = MultipleChoiceMenu.GetMultiSelectChoice(outputOptions);
                 List<string> outputSuccessMessages = new List<string>();
 
                 foreach (int choice in choices)
@@ -99,10 +94,49 @@ namespace FlightRouteGenerator
                 {
                     Console.WriteLine(msg);
                 }
+
+                await RestartProgram();
             }
             catch (RouteDiscontinuityException)
             {
                 Console.WriteLine($"\nUnfortunately, no route could be found between {departureAirport.ident} and {arrivalAirport.ident}.");
+                await RestartProgram();
+            }
+        }
+
+        private static async Task RunProgram()
+        {
+            if (!NavdataInteractor.Initialised)
+            {
+                Console.Write("Initialising datasets, please wait...");
+                NavdataInteractor.Initialise();
+                Console.WriteLine("\nDone!\n");
+            }
+            if (!PerformanceDataService.initialisationStarted)
+            {
+                Console.Write("Initialising Performance Data Service, please wait...");
+                await PerformanceDataService.Initialise();
+                Console.WriteLine("\nDone!\n");
+            }
+            Console.Clear();
+
+            Console.WriteLine("Welcome to the Flight Plan Generator!\nChoose what you would like to do:\n");
+            List<string> mainMenuChoices = new List<string> {"Create a new flight plan", "Exit the program"};
+            int choice = MultipleChoiceMenu.GetSingleSelectChoice(mainMenuChoices);
+
+            switch (choice)
+            {
+                case 0:
+                    await CreateNewFlightPlan();
+                    break;
+                case 1:
+                    Console.Write("\nStopping services...");
+                    if (PerformanceDataService.isInitialised)
+                    {
+                        PerformanceDataService.KillService();
+                    }
+                    Console.WriteLine("\nDone!");
+                    break;
             }
         }
 
@@ -114,9 +148,8 @@ namespace FlightRouteGenerator
             }
             catch (InvalidRouteInputException)
             {
-                Console.WriteLine("\n\nInvalid input.\nOnly enter different valid ICAO airport codes.\nPress any key to restart...");
-                Console.ReadKey();
-                await StartProgram();
+                Console.WriteLine("\n\nInvalid input.\nOnly enter different valid ICAO airport codes.");
+                await RestartProgram();
             }
             catch (InvalidAircraftTypeInputException)
             {
@@ -124,14 +157,13 @@ namespace FlightRouteGenerator
                 Console.WriteLine("Supported aircraft types are:\n");
 
                 Console.WriteLine(string.Join(", ", AircraftPerformanceAnalyser.SupportedAircraftTypes.ToArray()));
-                Console.WriteLine("\nPress any key to restart...");
-                Console.ReadKey();
-                await StartProgram();
+                await RestartProgram();
             }
         }
 
         public static async Task Main()
         {
+            Console.CursorVisible = false;
             await StartProgram();
 
             Console.WriteLine("\n\nPress any key to exit.");

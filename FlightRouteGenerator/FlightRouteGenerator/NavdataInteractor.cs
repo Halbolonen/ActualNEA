@@ -44,7 +44,9 @@ namespace FlightRouteGenerator
                 case "airway":
                     command = @"SELECT airway_id, airway_name, from_waypoint_id, to_waypoint_id,
                 from_laty, from_lonx, to_laty, to_lonx
-                FROM airway";
+                FROM airway
+                WHERE airway.direction = 'F'
+                OR airway.direction = 'N'";
                     break;
 
                 case "vor":
@@ -96,7 +98,8 @@ namespace FlightRouteGenerator
                         apRecord.name = (string)dataReader["name"];
                         apRecord.laty = Convert.ToDouble(dataReader["laty"]);
                         apRecord.lonx = Convert.ToDouble(dataReader["lonx"]);
-                        apRecord.altitude = (int)((double)Convert.ToInt32(dataReader["altitude"]) / 3.281);
+                        apRecord.altitude = (int)(Convert.ToInt32(dataReader["altitude"]) / 3.281);
+                        // converting altitude from feet to metres
 
                         recordDict.Add(apRecord.AirportID, apRecord);
                         break;

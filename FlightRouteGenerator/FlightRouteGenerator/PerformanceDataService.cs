@@ -19,10 +19,9 @@ namespace FlightRouteGenerator
         private static string HOST_CALC_SOCKET = $"{HOST_IP}:{HOST_CALC_PORT}";
         private static string HOST_URL = $"http://{HOST_SOCKET}";
         private static string HOST_CALC_URL = $"http://{HOST_CALC_SOCKET}";
-        public static async Task Initialise()
-        {
-            initialisationStarted = true;
 
+        private static void KillPDSProcesses()
+        {
             if (File.Exists("PDS.pid"))
             {
                 List<int> PIDs = new List<int>();
@@ -48,6 +47,13 @@ namespace FlightRouteGenerator
 
                 File.Delete("PDS.pid");
             }
+        }
+
+        public static async Task Initialise()
+        {
+            initialisationStarted = true;
+
+            KillPDSProcesses();
 
             pdapiProcess = new Process();
             pdapiProcess.StartInfo.UseShellExecute = false;
@@ -155,6 +161,11 @@ namespace FlightRouteGenerator
             }
 
             return payload;
+        }
+
+        public static void KillService()
+        {
+            KillPDSProcesses();
         }
     }
 }

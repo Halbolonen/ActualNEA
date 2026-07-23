@@ -9,11 +9,11 @@ namespace FlightRouteGenerator
 {
     internal static class Navigator
     {
+        private static readonly double DEG_TO_RAD = Math.PI / 180;
+        private static readonly int EARTH_RADIUS = 3440;
+        // in nautical miles
         public static double GetDistanceBetweenGeoCoordinates(double orgLaty, double orgLonx, double dstLaty, double dstLonx)
         {
-            const double DEG_TO_RAD = Math.PI / 180;
-            const int r = 3440;
-            // earth radius in nmi
 
             double phi1 = orgLaty * DEG_TO_RAD;
             double phi2 = dstLaty * DEG_TO_RAD;
@@ -23,100 +23,21 @@ namespace FlightRouteGenerator
             // using the haversine formula to find great circle distance between geographical coordinates
             double h = Math.Pow(Math.Sin((phi2 - phi1) / 2), 2) + Math.Cos(phi1) * Math.Cos(phi2) * Math.Pow(Math.Sin((lambda2 - lambda1) / 2), 2);
 
-            return 2 * r * Math.Asin(Math.Sqrt(h));
+            return 2 * EARTH_RADIUS * Math.Asin(Math.Sqrt(h));
         }
 
-        public static WaypointRecord GetBestUsefullyConnectedWaypointByGeoCoords(double laty, double lonx, AirportRecord destination, Dictionary<string, AStarNode> closedSet)
+        public static double GetBearingBetweenGeoCoordinates(double orgLaty, double orgLonx, double dstLaty, double dstLonx)
         {
-            WaypointRecord waypointToReturn = new WaypointRecord();
-            bool waypointFound = false;
-            List<WaypointRecord> candidates = new List<WaypointRecord>();
+            const double RAD_TO_DEG = 180 / Math.PI;
+            double phi1 = orgLaty * DEG_TO_RAD;
+            double phi2 = dstLaty * DEG_TO_RAD;
+            double lambda1 = orgLonx * DEG_TO_RAD;
+            double lambda2 = dstLonx * DEG_TO_RAD;
 
-            foreach (string waypointID in NavdataInteractor.outgoingAirwaysByWaypointID.Keys)
-            {
-                WaypointRecord testWaypoint = new WaypointRecord();
-                Record wpRecordDictOut = new Record();
+            double angle = Math.Atan2(Math.Sin(lambda2 - lambda1) * Math.Cos(phi2), Math.Cos(phi1) * Math.Sin(phi2) - Math.Sin(phi1) * Math.Cos(phi2) * Math.Cos(lambda2 - lambda1));
+            double bearing = (RAD_TO_DEG * angle + 360) % 360;
 
-                if (NavdataInteractor.waypointRecordDict.TryGetValue(waypointID, out wpRecordDictOut))
-                {
-                    testWaypoint = (WaypointRecord)wpRecordDictOut;
-                    // firstly, is it closer to the destination?
-                    double distanceFromTestWaypointToDestination = Navigator.GetDistanceBetweenGeoCoordinates(
-                        testWaypoint.laty, testWaypoint.lonx, destination.laty, destination.lonx);
-                    double distanceFromCurrentWaypointToDestination = Navigator.GetDistanceBetweenGeoCoordinates(
-                        laty, lonx, destination.laty, destination.lonx);
-
-                    if (distanceFromTestWaypointToDestination < distanceFromCurrentWaypointToDestination)
-                    {
-                        // then, does it have any non-explored airways that will lead us closer to the destination?
-                        int suitableNonExploredAirwaysCount = 0;
-                        List<(WaypointRecord, AirwayRecord)> outgoingAirwaysFromTestWaypoint;
-
-                        if (NavdataInteractor.outgoingAirwaysByWaypointID.TryGetValue(testWaypoint.WaypointID, out outgoingAirwaysFromTestWaypoint))
-                        {
-                            foreach ((WaypointRecord, AirwayRecord) airwayTuple in outgoingAirwaysFromTestWaypoint)
-                            {
-                                WaypointRecord tupleWaypoint = airwayTuple.Item1;
-                                if (!closedSet.TryGetValue(tupleWaypoint.WaypointID, out AStarNode airwayDestinationNode))
-                                {
-                                    if (Navigator.GetDistanceBetweenGeoCoordinates(
-                                        tupleWaypoint.laty, tupleWaypoint.lonx, destination.laty, destination.lonx)
-                                        < Navigator.GetDistanceBetweenGeoCoordinates(
-                                            laty, lonx, destination.laty, destination.lonx)
-                                        && !closedSet.ContainsKey(tupleWaypoint.WaypointID)
-                                        )
-                                    {
-                                        suitableNonExploredAirwaysCount++;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (suitableNonExploredAirwaysCount > 0)
-                        {
-                            // if it does, store it in a list.
-                            waypointFound = true;
-                            candidates.Add(testWaypoint);
-                        }
-                    }
-                }
-            }
-
-            double shortestDistanceToCurrentWaypoint = double.MaxValue;
-
-            foreach (WaypointRecord waypointCandidate in candidates)
-            {
-                double distanceToCurrentWaypoint = Navigator.GetDistanceBetweenGeoCoordinates(laty, lonx,
-                    waypointCandidate.laty, waypointCandidate.lonx);
-                if (distanceToCurrentWaypoint < shortestDistanceToCurrentWaypoint)
-                {
-                    shortestDistanceToCurrentWaypoint = distanceToCurrentWaypoint;
-                    waypointToReturn = waypointCandidate;
-                }
-            }
-
-            if (!waypointFound)
-            {
-                throw new OpenSetEmptyException();
-            }
-
-            return waypointToReturn;
-        }
-
-        public static WaypointRecord GetBestUsefullyConnectedWaypoint(WaypointRecord currentWaypoint, AirportRecord destination,
-            Dictionary<string, AStarNode> closedSet)
-        {
-            WaypointRecord bestUsefullyConnectedWaypoint;
-            try
-            {
-                bestUsefullyConnectedWaypoint = GetBestUsefullyConnectedWaypointByGeoCoords(currentWaypoint.laty, currentWaypoint.lonx, destination, closedSet);
-            }
-            catch (OpenSetEmptyException)
-            {
-                throw;
-            }
-
-            return bestUsefullyConnectedWaypoint;
+            return bearing;
         }
 
         public static WaypointRecord GetClosestWaypointToGeoCoordinates(double currentLaty, double currentLonx)

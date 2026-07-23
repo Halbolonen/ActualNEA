@@ -32,7 +32,7 @@ namespace FlightRouteGenerator
         public static void OutputRouteToConsole(Route route)
         {
             Console.WriteLine("\nYour route:\n");
-            Console.WriteLine($"{route.DepartureAirport.ident} at {Math.Round(route.DepartureAirport.altitude * M_TO_FT)} ft altitude\n---------------");
+            Console.WriteLine($"{route.DepartureAirport.ident} at {route.DepartureAirport.altitude * M_TO_FT:F0} ft altitude\n---------------");
 
             foreach (RouteLeg leg in route.Legs)
             {

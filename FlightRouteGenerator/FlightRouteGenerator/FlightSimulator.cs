@@ -158,7 +158,7 @@ namespace FlightRouteGenerator
             foreach (RouteLeg leg in route.Legs)
             {
                 PDS_WaypointInfo wpInfo = simResult.WaypointIDToInfo[leg.Waypoint.WaypointID];
-                leg.Waypoint.Altitude = (int)Math.Round(M_TO_FT * wpInfo.Altitude);
+                leg.Waypoint.Altitude = (int)(M_TO_FT * wpInfo.Altitude);
                 leg.Waypoint.TAS = wpInfo.TAS;
             }
 
