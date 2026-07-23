@@ -79,24 +79,6 @@ namespace FlightRouteGenerator
             return machNumber * localSpeedOfSound;
         }
 
-        private static double ComputeGrossMass(double fuelMass, Route route)
-        {
-            return Math.Clamp(fuelMass, 0, route.Aircraft.MaxFuelCapacity) + route.Loadsheet.ZFW;
-        }
-
-        private static async Task<double> GetFuelFlow(PDS_FuelFlowParameters ffParams)
-        {
-            string serialisedFFParams = JsonSerializer.Serialize(ffParams);
-            double fuelFlow;
-            fuelFlow = double.Parse(
-                    await PerformanceDataService.GetResponse("get_fuelflow", HttpMethod.Post, serialisedFFParams
-                    )
-                );
-
-
-            return fuelFlow;
-        }
-
         public static async Task<double> GetFlightFuelConsumption(Route route)
         {
             double burnedFuel = route.Aircraft.MaxFuelCapacity / 2;
@@ -163,6 +145,37 @@ namespace FlightRouteGenerator
             }
 
             return burnedFuel;
+        }
+
+        public static async Task<double> GetTaxiOrReserveFuel(PDS_TaxiOrReserveFuelParameters taxiReserveParams)
+        {
+            string serialisedTaxiReserveParams = JsonSerializer.Serialize(taxiReserveParams);
+            double consumedFuel = double.Parse(
+                await PerformanceDataService.GetCalculation("get_taxi_or_reserve_fuel", HttpMethod.Post, serialisedTaxiReserveParams)
+                );
+            double additiveFuel = consumedFuel;
+            bool fuelOptimal = false;
+
+            while (!fuelOptimal)
+            {
+                taxiReserveParams.Mass += (int)Math.Round(additiveFuel);
+                serialisedTaxiReserveParams = JsonSerializer.Serialize(taxiReserveParams);
+                consumedFuel = double.Parse(
+                await PerformanceDataService.GetCalculation("get_taxi_or_reserve_fuel", HttpMethod.Post, serialisedTaxiReserveParams)
+                );
+                taxiReserveParams.Mass -= (int)Math.Round(additiveFuel);
+
+                if (consumedFuel == additiveFuel)
+                {
+                    fuelOptimal = true;
+                }
+                else
+                {
+                    additiveFuel = consumedFuel;
+                }
+            }
+
+            return consumedFuel;
         }
     }
 }

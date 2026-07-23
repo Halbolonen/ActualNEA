@@ -13,6 +13,14 @@ namespace FlightRouteGenerator
             const int PAX_AND_CARRY_ON_MASS = 80;
             // in kilograms
             const int PAYLOAD_PER_PAX = BAGS_AND_CARGO_PER_PAX + PAX_AND_CARRY_ON_MASS;
+            const double KTS_TO_MpS = 0.514444;
+            // knots to m/s conversion constant
+            const double TAXI_SPEED = 30 * KTS_TO_MpS;
+            // in m/s
+            const int TAXI_TIME = 15;
+            // in minutes
+            const int RESERVE_TIME = 30;
+            // in minutes
             const double M_TO_FT = 3.28084;
             const double FT_TO_M = 0.3048;
             Random random = new Random();
@@ -73,11 +81,48 @@ namespace FlightRouteGenerator
             route.Loadsheet.ZFW = route.Aircraft.OEW + route.Loadsheet.Payload;
 
             double tripFuel = await FlightSimulator.GetFlightFuelConsumption(route);
-            
 
+            int lowPaxLimit = Math.Max(1, route.Aircraft.PassengerLoadLimits.low / 4);
 
+            route.Loadsheet.Pax = random.Next(lowPaxLimit, paxUnderMZFW + 1);
+            route.Loadsheet.BagsAndCargo = route.Loadsheet.Pax * BAGS_AND_CARGO_PER_PAX;
+            route.Loadsheet.Payload = route.Loadsheet.Pax * PAX_AND_CARRY_ON_MASS + route.Loadsheet.BagsAndCargo;
+            route.Loadsheet.ZFW = route.Aircraft.OEW + route.Loadsheet.Payload;
+
+            tripFuel = await FlightSimulator.GetFlightFuelConsumption(route);
+
+            PDS_TaxiOrReserveFuelParameters taxiParams = new PDS_TaxiOrReserveFuelParameters
+            {
+                Mass = (int)Math.Round(route.Loadsheet.ZFW + tripFuel),
+                TAS = TAXI_SPEED,
+                Altitude = route.DepartureAirport.altitude,
+                Time = TAXI_TIME,
+                AircraftType = route.Aircraft.ICAOIdent
+            };
+
+            double taxiFuel = Math.Round(await FlightSimulator.GetTaxiOrReserveFuel(taxiParams));
+
+            // https://skybrary.aero/articles/fuel-flight-planning-definitions
+            PDS_TaxiOrReserveFuelParameters reserveParams = new PDS_TaxiOrReserveFuelParameters
+            {
+                Mass = (int)Math.Round(route.Loadsheet.ZFW),
+                TAS = double.Parse(
+                    await PerformanceDataService.GetCalculation("cas_to_tas", HttpMethod.Post,
+                    JsonSerializer.Serialize(new PDS_AltitudeCAS
+                    {
+                        Altitude = 1500 * FT_TO_M + route.ArrivalAirport.altitude,
+                        CAS = route.Aircraft.FinalApproachCAS
+                    }))),
+                Altitude = (int)Math.Round(1500 * FT_TO_M + route.ArrivalAirport.altitude),
+                Time = RESERVE_TIME,
+                AircraftType = route.Aircraft.ICAOIdent
+            };
+
+            double reserveFuel = Math.Round(await FlightSimulator.GetTaxiOrReserveFuel(reserveParams));
+
+            route.Loadsheet.BlockFuel = tripFuel + taxiFuel + reserveFuel;
             route.Loadsheet.TOW = route.Loadsheet.ZFW + route.Loadsheet.BlockFuel;
-            route.Loadsheet.LAW = route.Loadsheet.TOW - tripFuel;
+            route.Loadsheet.LAW = route.Loadsheet.TOW - tripFuel - taxiFuel;
 
             return route;
         }

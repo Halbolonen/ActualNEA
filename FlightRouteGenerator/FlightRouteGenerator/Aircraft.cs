@@ -142,6 +142,7 @@ namespace FlightRouteGenerator
             aircraft.DescentXOverAltConstCAS = 1000 * await aircraft.GetIntDatapointFromPDS("get_descent_xover_alt_const_cas");
             aircraft.FinalApproachCAS = await aircraft.GetIntDatapointFromPDS("get_finalapp_vcas");
             aircraft.FinalApproachVS = await aircraft.GetIntDatapointFromPDS("get_finalapp_vs");
+            aircraft.MTOW = await aircraft.GetIntDatapointFromPDS("get_aircraft_mtow");
             
             
             return aircraft;

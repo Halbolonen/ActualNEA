@@ -37,7 +37,7 @@ class FuelFlowParameters(BaseModel):
     dT: int = 0
     aircraft_type: str
 
-class TaxiFuelParameters(BaseModel):
+class TaxiOrReserveParameters(BaseModel):
     mass: int
     tas: float
     alt: float
@@ -48,6 +48,10 @@ class TaxiFuelParameters(BaseModel):
 class SimulatorResult(BaseModel):
     trip_fuel: float
     waypoint_id_to_info: dict[str, WaypointInfo]
+
+class AltitudeCAS(BaseModel):
+    altitude: float
+    cas: float
 
 class FlightPhase(Enum):
     TAKEOFF = 0
@@ -60,6 +64,10 @@ class FlightPhase(Enum):
 @performance_calculator.get("/")
 def root():
     return "PDS PERFORMANCE CALCULATOR ONLINE"
+
+@performance_calculator.post("/cas_to_tas")
+def external_cas_to_tas(alt_cas: AltitudeCAS):
+    return cas_to_tas(altitude=alt_cas.altitude, cas=alt_cas.cas)
 
 def cas_to_tas(altitude: float, cas: float):
     # https://www.grc.nasa.gov/www/k-12/airplane/atmosmet.html
@@ -280,16 +288,31 @@ def simulate_flight(flight_request: FlightRequest):
 
     return sim_result
 
-@performance_calculator.post("/get_taxi_fuel")
-def get_taxi_fuel(tf_params: TaxiFuelParameters):
+@performance_calculator.post("/get_taxi_or_reserve_fuel")
+def get_taxi_or_reserve_fuel(tr_params: TaxiOrReserveParameters):
+    dt: int = 1
+    # in seconds
+    elapsed_time: int = 0
+    # in seconds
+    consumed_fuel: float = 0
+    # in kg
+
     ff_params: FuelFlowParameters = FuelFlowParameters(
-        mass=tf_params.mass,
-        tas=tf_params.tas,
-        alt=tf_params.alt,
+        mass=tr_params.mass,
+        tas=tr_params.tas,
+        alt=tr_params.alt,
         vs=0,
         acc=0,
         dT=0,
-        aircraft_type=tf_params.aircraft_type
+        aircraft_type=tr_params.aircraft_type
     )
-    flow: float = api.get_fuelflow(ff_params)
-    return flow * tf_params.time * 60
+
+    required_time = tr_params.time * 60
+    while (elapsed_time < required_time):
+        flow: float = api.get_fuelflow(ff_params)
+        ff_params.mass -= flow * dt
+        consumed_fuel += flow * dt
+        elapsed_time += dt
+        
+    return consumed_fuel
+
