@@ -91,6 +91,11 @@ namespace FlightRouteGenerator
 
             tripFuel = await FlightSimulator.GetFlightFuelConsumption(route);
 
+            if (tripFuel > route.Aircraft.MaxFuelCapacity)
+            {
+                throw new InsufficientAircraftRangeException();
+            }
+
             PDS_TaxiOrReserveFuelParameters taxiParams = new PDS_TaxiOrReserveFuelParameters
             {
                 Mass = (int)Math.Round(route.Loadsheet.ZFW + tripFuel),
@@ -121,6 +126,12 @@ namespace FlightRouteGenerator
             double reserveFuel = Math.Round(await FlightSimulator.GetTaxiOrReserveFuel(reserveParams));
 
             route.Loadsheet.BlockFuel = tripFuel + taxiFuel + reserveFuel;
+            
+            if (route.Loadsheet.BlockFuel > route.Aircraft.MaxFuelCapacity)
+            {
+                throw new InsufficientAircraftRangeException();
+            }
+
             route.Loadsheet.TOW = route.Loadsheet.ZFW + route.Loadsheet.BlockFuel;
             route.Loadsheet.LAW = route.Loadsheet.TOW - tripFuel - taxiFuel;
 

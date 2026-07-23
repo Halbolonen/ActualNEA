@@ -78,7 +78,6 @@ namespace FlightRouteGenerator
 
             Console.CursorTop = belowTextCursorTop;
             Console.CursorLeft = baseCursorLeft;
-            Console.CursorVisible = true;
             return selectedOptions;
         }
 
@@ -127,7 +126,6 @@ namespace FlightRouteGenerator
 
             Console.CursorTop = belowTextCursorTop;
             Console.CursorLeft = baseCursorLeft;
-            Console.CursorVisible = true;
             return selectedOption;
         }
     }

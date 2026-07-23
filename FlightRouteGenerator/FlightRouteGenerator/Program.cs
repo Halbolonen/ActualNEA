@@ -10,7 +10,18 @@ namespace FlightRouteGenerator
         {
             Console.WriteLine("\nPress any key to restart...");
             Console.ReadKey();
-            await StartProgram();
+            Console.Write("Are you sure you want to restart? Y/N: ");
+            Console.CursorVisible = true;
+            if (Console.ReadLine().ToUpper() == "Y")
+            {
+                Console.CursorVisible = false;
+                await StartProgram();
+            }
+            else
+            {
+                Console.CursorVisible = false;
+                RestartProgram();
+            }
         }
 
         private static async Task CreateNewFlightPlan()
@@ -24,16 +35,13 @@ namespace FlightRouteGenerator
 
             Console.Write("Enter aircraft type ICAO code: ");
             string acftTypeInput = Console.ReadLine().ToUpper();
+            Console.CursorVisible = false;
 
             if (departureInput == arrivalInput)
             {
                 throw new InvalidRouteInputException();
             }
 
-            if (!AircraftPerformanceAnalyser.SupportedAircraftTypes.Contains(acftTypeInput))
-            {
-                throw new InvalidAircraftTypeInputException();
-            }
             AirportRecord departureAirport;
             AirportRecord arrivalAirport;
 
@@ -47,6 +55,12 @@ namespace FlightRouteGenerator
                 throw new InvalidRouteInputException();
             }
 
+            if (!AircraftPerformanceAnalyser.SupportedAircraftTypes.Contains(acftTypeInput))
+            {
+                throw new InvalidAircraftTypeInputException();
+            }
+
+
             AStarSearch aStar = new AStarSearch();
             Route route;
 
@@ -58,8 +72,16 @@ namespace FlightRouteGenerator
                 Console.WriteLine("\nDone!\n");
                 Console.Write("Evaluating aircraft performance...");
 
-                route = await AircraftPerformanceAnalyser.AddVerticalProfileToRoute(route);
-                Console.WriteLine("\nDone!\n");
+
+                try
+                {
+                    route = await AircraftPerformanceAnalyser.AddVerticalProfileToRoute(route);
+                    Console.WriteLine("\nDone!\n");
+                }
+                catch (InsufficientAircraftRangeException)
+                {
+                    throw;
+                }
 
                 Console.Clear();
                 Console.WriteLine("Use the menu to select the formats you want your flight plan to be outputted in.\n");
@@ -100,6 +122,11 @@ namespace FlightRouteGenerator
             catch (RouteDiscontinuityException)
             {
                 Console.WriteLine($"\nUnfortunately, no route could be found between {departureAirport.ident} and {arrivalAirport.ident}.");
+                await RestartProgram();
+            }
+            catch (InsufficientAircraftRangeException)
+            {
+                Console.WriteLine($"\n\nUnfortunately, the maximum range of your selected aircraft, {acftTypeInput}, is too low for your selected flight.\nTry again for an aircraft with a longer range, or try a shorter flight.");
                 await RestartProgram();
             }
         }
@@ -168,6 +195,7 @@ namespace FlightRouteGenerator
 
             Console.WriteLine("\n\nPress any key to exit.");
             Console.ReadKey();
+            Console.CursorVisible = true;
         }
     }
 }
