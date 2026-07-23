@@ -11,6 +11,8 @@ namespace FlightRouteGenerator
     {
         [JsonPropertyName("trip_fuel")]
         public double TripFuel { get; set; }
+        [JsonPropertyName("cruise_alt")]
+        public double CruiseAltitude { get; set; }
         [JsonPropertyName("waypoint_id_to_info")]
         public Dictionary<string, PDS_WaypointInfo> WaypointIDToInfo { get; set; }
     }

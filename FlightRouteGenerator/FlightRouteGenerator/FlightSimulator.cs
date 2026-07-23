@@ -123,8 +123,11 @@ namespace FlightRouteGenerator
                 string flightData = await PerformanceDataService.GetCalculation("simulate_flight", HttpMethod.Post, serialisedRequest);
                 simResult = JsonSerializer.Deserialize<PDS_SimulatorResult>(flightData
                        );
+                Console.WriteLine(flightData);
 
                 burnedFuel = simResult.TripFuel;
+
+                route.CruiseAltitude = (int)simResult.CruiseAltitude;
 
                 if (flightRequest.TripFuel - burnedFuel < 5)
                 {
