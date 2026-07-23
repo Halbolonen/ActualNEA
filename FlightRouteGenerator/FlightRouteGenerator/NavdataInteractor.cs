@@ -11,7 +11,11 @@ namespace FlightRouteGenerator
 {
     internal static class NavdataInteractor
     {
+#if DEBUG
+        private static string NAV_DB_FILE_PATH = $"Data Source=\"{Directory.GetCurrentDirectory()}\\..\\Data\\navdata.sqlite\";";
+#else
         private static string NAV_DB_FILE_PATH = $"Data Source=\"{Directory.GetCurrentDirectory()}\\Data\\navdata.sqlite\";";
+#endif
         private static SQLiteConnection navDBConnection = new SQLiteConnection(NAV_DB_FILE_PATH);
         public static Dictionary<string, Record> waypointRecordDict { get; private set; }
         public static Dictionary<string, Record> airportRecordDict { get; private set; }

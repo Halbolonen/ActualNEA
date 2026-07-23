@@ -6,7 +6,7 @@ namespace FlightRouteGenerator
     internal class PerformanceDataService
     {
 #if DEBUG
-        private static string PDS_FILE_PATH = "../../../../../PerformanceDataService";
+        private static string PDS_FILE_PATH = "..\\..\\..\\..\\..\\..\\PerformanceDataService";
 #else
         private static string PDS_FILE_PATH = "Services";
 #endif

@@ -6,23 +6,6 @@ namespace FlightRouteGenerator
 {
     class Program
     {
-        private static async Task RestartProgram()
-        {
-            Console.WriteLine("\nPress any key to restart...");
-            Console.ReadKey();
-            Console.Write("Are you sure you want to restart? Y/N: ");
-            Console.CursorVisible = true;
-            if (Console.ReadLine().ToUpper() == "Y")
-            {
-                Console.CursorVisible = false;
-                await StartProgram();
-            }
-            else
-            {
-                Console.CursorVisible = false;
-                RestartProgram();
-            }
-        }
 
         private static async Task CreateNewFlightPlan()
         {
@@ -116,18 +99,14 @@ namespace FlightRouteGenerator
                 {
                     Console.WriteLine(msg);
                 }
-
-                await RestartProgram();
             }
             catch (RouteDiscontinuityException)
             {
                 Console.WriteLine($"\nUnfortunately, no route could be found between {departureAirport.ident} and {arrivalAirport.ident}.");
-                await RestartProgram();
             }
             catch (InsufficientAircraftRangeException)
             {
                 Console.WriteLine($"\n\nUnfortunately, the maximum range of your selected aircraft, {acftTypeInput}, is too low for your selected flight.\nTry again for an aircraft with a longer range, or try a shorter flight.");
-                await RestartProgram();
             }
         }
 
@@ -176,7 +155,6 @@ namespace FlightRouteGenerator
             catch (InvalidRouteInputException)
             {
                 Console.WriteLine("\n\nInvalid input.\nOnly enter different valid ICAO airport codes.");
-                await RestartProgram();
             }
             catch (InvalidAircraftTypeInputException)
             {
@@ -184,14 +162,27 @@ namespace FlightRouteGenerator
                 Console.WriteLine("Supported aircraft types are:\n");
 
                 Console.WriteLine(string.Join(", ", AircraftPerformanceAnalyser.SupportedAircraftTypes.ToArray()));
-                await RestartProgram();
             }
         }
 
         public static async Task Main()
         {
             Console.CursorVisible = false;
-            await StartProgram();
+
+            while (true)
+            {
+                await StartProgram();
+
+                Console.WriteLine("\nPress any key to restart...");
+                Console.ReadKey();
+                Console.Write("Are you sure you want to restart? Y/N: ");
+                Console.CursorVisible = true;
+                if (Console.ReadLine().ToUpper() != "Y")
+                {
+                    break;
+                }
+            }
+
 
             Console.WriteLine("\n\nPress any key to exit.");
             Console.ReadKey();
