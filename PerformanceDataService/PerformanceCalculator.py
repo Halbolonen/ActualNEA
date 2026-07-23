@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import math
 from numpy import clip
 from enum import Enum
+import uvicorn
 
 performance_calculator = FastAPI()
 
@@ -316,3 +317,10 @@ def get_taxi_or_reserve_fuel(tr_params: TaxiOrReserveParameters):
         
     return consumed_fuel
 
+if __name__ == "__main__":
+    uvicorn.run(
+        performance_calculator,
+        host="127.0.0.1",
+        port=9000,
+        log_level="warning"
+    )
