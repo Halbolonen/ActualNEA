@@ -48,6 +48,11 @@ def get_aircraft_mtow(request: AircraftRequest):
     acft_info = get_aircraft_info(request)
     return acft_info["limits"]["MTOW"]
 
+@api.post("/get_aircraft_mlw")
+def get_aircraft_mlw(request: AircraftRequest):
+    acft_info = get_aircraft_info(request)
+    return acft_info["limits"]["MLW"]
+
 @api.post("/get_aircraft_fuel_capacity")
 def get_aircraft_fuel_capacity(request: AircraftRequest):
     aircraft_info = get_aircraft_info(request)

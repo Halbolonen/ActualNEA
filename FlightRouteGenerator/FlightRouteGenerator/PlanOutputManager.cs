@@ -301,6 +301,8 @@ ZFW: {route.Loadsheet.ZFW} kg
                                 .SemiBold()
                                 .FontFamily("Consolas");
 
+                            column.Item().AlignRight().PaddingTop(20).PaddingRight(23).Text("PIC SIGNATURE: ...............");
+
                             column.Item().Table(table =>
                                 {
                                     table.ColumnsDefinition(columns =>
@@ -309,6 +311,7 @@ ZFW: {route.Loadsheet.ZFW} kg
                                         columns.ConstantColumn(65);
                                         columns.ConstantColumn(65);
                                         columns.ConstantColumn(65);
+                                        columns.ConstantColumn(120);
                                     });
 
                                     table.Header(header =>
@@ -317,6 +320,7 @@ ZFW: {route.Loadsheet.ZFW} kg
                                         header.Cell().Element(CellStyle).Text("EST");
                                         header.Cell().Element(CellStyle).Text("MAX");
                                         header.Cell().Element(CellStyle).Text("ACTUAL");
+                                        header.Cell();
 
                                         static IContainer CellStyle(IContainer container)
                                         {
@@ -338,38 +342,47 @@ ZFW: {route.Loadsheet.ZFW} kg
 
                                     table.Cell().BorderRight(1).Element(CellStyle).Text($"PAX");
                                     table.Cell().Element(CellStyle).Text($"{route.Loadsheet.Pax}");
-                                    table.Cell().Element(CellStyle).Text("!IMP");
+                                    table.Cell().Element(CellStyle).Text("");
                                     table.Cell().Element(CellStyle).Padding(8).Text("......");
+                                    table.Cell();
 
                                     table.Cell().BorderRight(1).Element(CellStyle).Text("BAG/CARGO");
                                     table.Cell().Element(CellStyle).Text($"{Math.Round(route.Loadsheet.BagsAndCargo / 1000):F1}");
-                                    table.Cell().Element(CellStyle).Text("!IMP");
+                                    table.Cell().Element(CellStyle).Text("");
                                     table.Cell().Element(CellStyle).Padding(8).Text("......");
+                                    table.Cell();
 
                                     table.Cell().BorderRight(1).Element(CellStyle).Text("PAYLOAD");
                                     table.Cell().Element(CellStyle).Text($"{Math.Round(route.Loadsheet.Payload / 1000):F1}");
-                                    table.Cell().Element(CellStyle).Text("!IMP");
+                                    table.Cell().Element(CellStyle).Text("");
                                     table.Cell().Element(CellStyle).Padding(8).Text("......");
+                                    table.Cell();
 
                                     table.Cell().BorderRight(1).Element(CellStyle).Text("ZFW");
                                     table.Cell().Element(CellStyle).Text($"{Math.Round(route.Loadsheet.ZFW / 1000):F1}");
-                                    table.Cell().Element(CellStyle).Text("!IMP");
+                                    table.Cell().Element(CellStyle).Text($"{(route.Aircraft.MTOW - route.Loadsheet.BlockFuel) / 1000:F1}");
                                     table.Cell().Element(CellStyle).Padding(8).Text("......");
+                                    table.Cell();
+
+                                    double maxFuel = Math.Min(route.Aircraft.MTOW - route.Loadsheet.ZFW, route.Aircraft.MaxFuelCapacity);
 
                                     table.Cell().BorderRight(1).Element(CellStyle).Text("FUEL");
                                     table.Cell().Element(CellStyle).Text($"{Math.Round(route.Loadsheet.BlockFuel / 1000):F1}");
-                                    table.Cell().Element(CellStyle).Text("!IMP");
+                                    table.Cell().Element(CellStyle).Text($"{maxFuel / 1000:F1}");
                                     table.Cell().Element(CellStyle).Padding(8).Text("......");
+                                    table.Cell().Text($"POSS EXTRA {(maxFuel - route.Loadsheet.BlockFuel) / 1000:F1}");
 
                                     table.Cell().BorderRight(1).Element(CellStyle).Text("TOW");
                                     table.Cell().Element(CellStyle).Text($"{Math.Round(route.Loadsheet.TOW / 1000):F1}");
-                                    table.Cell().Element(CellStyle).Text("!IMP");
+                                    table.Cell().Element(CellStyle).Text($"{route.Aircraft.MTOW / 1000:F1}");
                                     table.Cell().Element(CellStyle).Padding(8).Text("......");
+                                    table.Cell();
 
                                     table.Cell().BorderRight(1).Element(CellStyle).Text("LAW");
                                     table.Cell().Element(CellStyle).Text($"{Math.Round(route.Loadsheet.LAW / 1000):F1}");
-                                    table.Cell().Element(CellStyle).Text("!IMP");
+                                    table.Cell().Element(CellStyle).Text($"{route.Aircraft.MLW / 1000:F1}");
                                     table.Cell().Element(CellStyle).Padding(8).Text("......");
+                                    table.Cell();
                                 });
 
                             column.Item().Padding(2).BorderBottom(1).BorderLeft(1).BorderRight(1).BorderTop(1).Background(Colors.Grey.Lighten1).Text("ROUTE")

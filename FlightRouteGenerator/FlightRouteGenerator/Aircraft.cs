@@ -11,6 +11,8 @@ namespace FlightRouteGenerator
         // in kilograms
         public int MTOW { get; set; }
         // Maximum TakeOff Weight, in kilograms
+        public int MLW { get; set; }
+        // Maximum Landing Weight, in kilograms
         public struct PassengerLoadRange
         {
             public int high { get; set; }
@@ -143,6 +145,7 @@ namespace FlightRouteGenerator
             aircraft.FinalApproachCAS = await aircraft.GetIntDatapointFromPDS("get_finalapp_vcas");
             aircraft.FinalApproachVS = await aircraft.GetIntDatapointFromPDS("get_finalapp_vs");
             aircraft.MTOW = await aircraft.GetIntDatapointFromPDS("get_aircraft_mtow");
+            aircraft.MLW = await aircraft.GetIntDatapointFromPDS("get_aircraft_mlw");
             
             
             return aircraft;
