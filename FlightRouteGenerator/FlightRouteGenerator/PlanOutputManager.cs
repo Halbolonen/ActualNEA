@@ -321,6 +321,59 @@ ZFW: {route.Loadsheet.ZFW} kg
                                 .SemiBold()
                                 .FontFamily("Consolas");
 
+                            column.Item().Table(table =>
+                            {
+                                static IContainer CellStyle(IContainer container)
+                                {
+                                    return container
+                                        .DefaultTextStyle(x => x.FontFamily("Consolas").FontSize(12))
+                                        .AlignCenter()
+                                        .PaddingTop(2)
+                                        .PaddingBottom(2);
+                                }
+
+                                static IContainer HeaderStyle(IContainer container)
+                                {
+                                    return container
+                                        .DefaultTextStyle(x => x.FontFamily("Consolas").FontSize(12))
+                                        .AlignCenter()
+                                        .PaddingTop(2)
+                                        .PaddingBottom(4);
+                                }
+
+                                static IContainer LeftCellStyle(IContainer container)
+                                {
+                                    return container
+                                        .DefaultTextStyle(x => x.FontFamily("Consolas").FontSize(12))
+                                        .BorderRight(1)
+                                        .AlignCenter()
+                                        .PaddingTop(2)
+                                        .PaddingBottom(2);
+                                }
+
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(100);
+                                    columns.ConstantColumn(65);
+                                });
+
+                                table.Header(header =>
+                                {
+                                    header.Cell().BorderRight(1).Element(HeaderStyle).Text("CATEGORY").SemiBold();
+                                    header.Cell().Element(HeaderStyle).Text("FUEL").SemiBold();
+                                });
+
+                                table.Cell().Element(LeftCellStyle).Text("TRIP");
+                                table.Cell().Element(CellStyle).Text($"{route.Loadsheet.TripFuel}");
+                                table.Cell().Element(LeftCellStyle).Text("FINRES");
+                                table.Cell().Element(CellStyle).Text($"{route.Loadsheet.FinalReserveFuel}");
+                                table.Cell().PaddingBottom(2).Element(LeftCellStyle).Text("TAXI");
+                                table.Cell().PaddingBottom(2).Element(CellStyle).Text($"{route.Loadsheet.TaxiFuel}");
+                                table.Cell().BorderTop(1).PaddingTop(2).Element(LeftCellStyle).Text("BLOCK");
+                                table.Cell().BorderTop(1).PaddingTop(2).Element(CellStyle).Text($"{route.Loadsheet.BlockFuel}").SemiBold();
+
+                            });
+
                             column.Item().Padding(2).BorderBottom(1).BorderLeft(1).BorderRight(1).BorderTop(1).Background(Colors.Grey.Lighten1).Text("LOADSHEET")
                                 .FontSize(16)
                                 .FontColor(Colors.Black)

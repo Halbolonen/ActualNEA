@@ -12,7 +12,7 @@ namespace FlightRouteGenerator
         {
             while (Console.KeyAvailable)
             {
-                Console.ReadKey();
+                Console.ReadKey(true);
             }
         }
 

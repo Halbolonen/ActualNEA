@@ -110,7 +110,7 @@ namespace FlightRouteGenerator
             }
         }
 
-        private static async Task RunProgram()
+        private static async Task InitialiseServices()
         {
             if (!NavdataInteractor.Initialised)
             {
@@ -124,65 +124,77 @@ namespace FlightRouteGenerator
                 await PerformanceDataService.Initialise();
                 Console.WriteLine("\nDone!\n");
             }
-            Console.Clear();
-
-            Console.WriteLine("Welcome to the Flight Plan Generator!\nChoose what you would like to do:\n");
-            List<string> mainMenuChoices = new List<string> {"Create a new flight plan", "Exit the program"};
-            int choice = MultipleChoiceMenu.GetSingleSelectChoice(mainMenuChoices);
-
-            switch (choice)
-            {
-                case 0:
-                    await CreateNewFlightPlan();
-                    break;
-                case 1:
-                    Console.Write("\nStopping services...");
-                    if (PerformanceDataService.isInitialised)
-                    {
-                        PerformanceDataService.KillService();
-                    }
-                    Console.WriteLine("\nDone!");
-                    break;
-            }
-        }
-
-        private static async Task StartProgram()
-        {
-            try
-            {
-                await RunProgram();
-            }
-            catch (InvalidRouteInputException)
-            {
-                Console.WriteLine("\n\nInvalid input.\nOnly enter different valid ICAO airport codes.");
-            }
-            catch (InvalidAircraftTypeInputException)
-            {
-                Console.WriteLine("\n\nInvalid input.\nOnly enter valid, supported ICAO aircraft types.");
-                Console.WriteLine("Supported aircraft types are:\n");
-
-                Console.WriteLine(string.Join(", ", AircraftPerformanceAnalyser.SupportedAircraftTypes.ToArray()));
-            }
         }
 
         public static async Task Main()
         {
             Console.CursorVisible = false;
-
-            while (true)
+            await InitialiseServices();
+            bool programRunning = true;
+            while (programRunning)
             {
-                await StartProgram();
 
-                Console.WriteLine("\nPress any key to restart...");
-                Console.ReadKey();
-                Console.Write("Are you sure you want to restart? Y/N: ");
-                Console.CursorVisible = true;
-                if (Console.ReadLine().ToUpper() != "Y")
+                Console.Clear();
+
+                Console.WriteLine("Welcome to the Flight Plan Generator!\nChoose what you would like to do:\n");
+                List<string> mainMenuChoices = new List<string> { "Create a new flight plan", "Exit the program" };
+                int choice = MultipleChoiceMenu.GetSingleSelectChoice(mainMenuChoices);
+
+                switch (choice)
+                {
+                    case 0:
+                        try
+                        {
+                            await CreateNewFlightPlan();
+                        }
+                        catch (InvalidRouteInputException)
+                        {
+                            Console.WriteLine("\n\nInvalid input.\nOnly enter different valid ICAO airport codes.");
+                        }
+                        catch (InvalidAircraftTypeInputException)
+                        {
+                            Console.WriteLine("\n\nInvalid input.\nOnly enter valid, supported ICAO aircraft types.");
+                            Console.WriteLine("Supported aircraft types are:\n");
+
+                            Console.WriteLine(string.Join(", ", AircraftPerformanceAnalyser.SupportedAircraftTypes.ToArray()));
+                        }
+
+                        break;
+                    case 1:
+                        programRunning = false;
+                        break;
+                }
+
+                if (!programRunning)
                 {
                     break;
                 }
+
+                bool commenceRestart = false;
+
+                while (!commenceRestart)
+                {
+                    Console.WriteLine("\nPress any key to restart...");
+                    Console.ReadKey();
+                    Console.Write("Are you sure you want to restart? Y/N: ");
+                    Console.CursorVisible = true;
+                    if (Console.ReadLine().ToUpper() == "Y")
+                    {
+                        commenceRestart = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine();
+                    }
+                }
             }
 
+            Console.Write("\nStopping services...");
+            if (PerformanceDataService.isInitialised)
+            {
+                PerformanceDataService.KillService();
+            }
+            Console.WriteLine("\nDone!");
 
             Console.WriteLine("\n\nPress any key to exit.");
             Console.ReadKey();
