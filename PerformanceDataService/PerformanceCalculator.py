@@ -24,7 +24,7 @@ class FlightRequest(BaseModel):
     arrival_arprt_alt: int
     acft_request: AircraftRequest
     zfw: float
-    cruise_altitude: int
+    cruise_altitude: float
     route_total_distance: float
     trip_fuel: float
     waypoint_id_to_track_distance: list[WaypointTrackDistance]
@@ -86,14 +86,19 @@ def cas_to_tas(altitude: float, cas: float):
     # speed of sound at sea level, m/s.
     ISA_LAPSE_RATE = 6.5
     # loss of air temperature in centigrade per km.
+    t: float
+    P: float
+    if (altitude < 11000):
+        t = t_0 - (altitude / 1000) * ISA_LAPSE_RATE
+        P = p_0 * math.pow(t / t_0, 5.256)
+        # TODO: label magic number -5.256
+        # static pressure at altitude
+    else:
+        t = -56.46
+        P = 22.65 * math.e ** (1.73 - 0.000157 * altitude)
 
-    t: float = t_0 - (altitude / 1000) * ISA_LAPSE_RATE
     localSpeedOfSound = math.sqrt(gamma * R * t)
     # https://www.grc.nasa.gov/www/k-12/VirtualAero/BottleRocket/airplane/sound.html
-
-    P: float = p_0 * math.pow(t / t_0, 5.256)
-    # TODO: label magic number -5.256
-    # static pressure at altitude
 
     qc: float = p_0 * (math.pow(1 + 0.2 * math.pow(cas / a_0, 2), 3.5) - 1)
     # subsonic impact pressure, mach
@@ -128,6 +133,10 @@ def compute_gross_mass(fuel_mass: float, max_fuel_capacity: int, zfw: int):
 
 def get_fuel_flow(ff_params: FuelFlowParameters):
     return api.get_fuelflow(ff_params)
+
+def flight_level_is_odd(flight_level: float):
+    M_TO_FT: float = 3.28084
+    return round(flight_level * M_TO_FT / 1000) % 2 != 0
 
 @performance_calculator.post("/simulate_flight")
 def simulate_flight(flight_request: FlightRequest):
@@ -174,6 +183,7 @@ def simulate_flight(flight_request: FlightRequest):
         aircraft_type=flight_request.acft_request.aircraft_type,
         tas = cas_to_tas(flight_request.departure_arprt_alt, cas)
     )
+
     def run_simulation_tick():
         nonlocal remaining_fuel, distance_travelled, descent_track_length, sim_result, next_waypoint_id
         nonlocal next_waypoint_index, next_waypoint_track_length, flight_request
@@ -198,8 +208,6 @@ def simulate_flight(flight_request: FlightRequest):
                     ff_params.tas * dt * math.cos(angle_of_climb) / M_PER_NMI)
                 
                 if (math.ceil(distance_travelled) >= next_waypoint_track_length and next_waypoint_index < len(flight_request.waypoint_id_to_track_distance)):
-                    if (next_waypoint_id == 2147483647):
-                        print(ff_params.alt)
                     sim_result.waypoint_id_to_info[next_waypoint_id] = WaypointInfo(alt=0,tas=0)
                     sim_result.waypoint_id_to_info[next_waypoint_id].alt = round(ff_params.alt)
                     sim_result.waypoint_id_to_info[next_waypoint_id].tas = ff_params.tas
@@ -247,11 +255,18 @@ def simulate_flight(flight_request: FlightRequest):
     continue_climb: bool = True
 
     def check_and_set_new_cruise_altitude():
+        M_TO_FT: float = 3.28084
+        FT_TO_M: float = 0.3048
         nonlocal cruise_alt, ff_params, distance_travelled, climb_and_cruise_track_length, continue_climb
         if (distance_travelled >= climb_and_cruise_track_length):
                 cruise_alt = ff_params.alt
                 continue_climb = False
                 print("stopping climb at",cruise_alt)
+                if (flight_level_is_odd(flight_request.cruise_altitude) and not flight_level_is_odd(cruise_alt) or not flight_level_is_odd(flight_request.cruise_altitude) and flight_level_is_odd(cruise_alt)):
+                    cruise_alt = (round(cruise_alt * M_TO_FT / 1000) + 1) * 1000 * FT_TO_M
+                else:
+                    cruise_alt = round(cruise_alt * M_TO_FT / 1000) * 1000 * FT_TO_M
+
     
     # getting descent track length before simulating rest of flight
     phase_of_flight = FlightPhase.DESCENT_TRACK_LENGTH_COMPUTATION
@@ -285,15 +300,6 @@ def simulate_flight(flight_request: FlightRequest):
         run_simulation_tick()
     check_and_set_new_cruise_altitude()
 
-    # entering cruise
-    ff_params.vs = 0
-    mach = cruise_mach
-    phase_of_flight = FlightPhase.CRUISE
-    ff_params.tas = mach_to_tas(ff_params.alt, mach)
-
-    while (distance_travelled < climb_and_cruise_track_length):
-        run_simulation_tick();
-
     # if cruise altitude has been updated,
     # simulate descent stages at current cruise altitude
     # then continue cruise until we actually have to descend.
@@ -303,11 +309,14 @@ def simulate_flight(flight_request: FlightRequest):
         descent_ff_params = ff_params.model_copy(deep=True)
         simulate_descent(params=descent_ff_params)
 
-        phase_of_flight = FlightPhase.CRUISE
-        ff_params.vs = 0
-        mach = cruise_mach
-        while (distance_travelled < climb_and_cruise_track_length):
-            run_simulation_tick();
+    # entering cruise
+    phase_of_flight = FlightPhase.CRUISE
+    ff_params.vs = 0
+    mach = cruise_mach
+    ff_params.tas = mach_to_tas(ff_params.alt, mach)
+    ff_params.alt = cruise_alt
+    while (distance_travelled < climb_and_cruise_track_length):
+        run_simulation_tick();
 
     # simulating descent stages for real this time
     phase_of_flight = FlightPhase.DESCENT

@@ -18,7 +18,7 @@ namespace FlightRouteGenerator
         [JsonPropertyName("zfw")]
         public double ZFW { get; set; }
         [JsonPropertyName("cruise_altitude")]
-        public int CruiseAltitude { get; set; }
+        public double CruiseAltitude { get; set; }
         [JsonPropertyName("route_total_distance")]
         public double RouteTotalDistance { get; set; }
         [JsonPropertyName("trip_fuel")]

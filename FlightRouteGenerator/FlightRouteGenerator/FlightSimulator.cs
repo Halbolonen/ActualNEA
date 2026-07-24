@@ -127,7 +127,7 @@ namespace FlightRouteGenerator
 
                 burnedFuel = simResult.TripFuel;
 
-                route.CruiseAltitude = (int)simResult.CruiseAltitude;
+                route.CruiseAltitude = simResult.CruiseAltitude;
 
                 if (flightRequest.TripFuel - burnedFuel < 5)
                 {

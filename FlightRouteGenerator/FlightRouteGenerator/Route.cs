@@ -14,7 +14,7 @@ namespace FlightRouteGenerator
         public double TotalDistance { get; set; }
         // in nautical miles
         public int enrouteWaypointCount { get; set; }
-        public int CruiseAltitude { get; set; }
+        public double CruiseAltitude { get; set; }
         // in feet
         public Aircraft Aircraft { get; set; }
         public LoadsheetInfo Loadsheet { get; set; }
