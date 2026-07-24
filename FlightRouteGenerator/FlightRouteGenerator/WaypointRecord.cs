@@ -17,6 +17,8 @@ namespace FlightRouteGenerator
         // in feet
         public double TAS { get; set; }
         // True AirSpeed for the aircraft to reach at this waypoint, in knots
+        public double OAT { get; set; }
+        // Outside Air Temperature at the waypoint, in centigrade
         public string Name { get; set; }
         
         public string WaypointID {

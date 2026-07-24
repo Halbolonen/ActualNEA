@@ -6,3 +6,11 @@ use Invoke-RestMethod to call these things from PS.<br><br>
         `curl -X POST -H 'application/json' http://localhost:8000/items?item=B762`<br><br>
 use uvicorn main:app --reload to run the API endpoint. make sure you are in the directory of main and in the venv when you do that.<br>
 enter venv using .\venv\Scripts\activate
+
+
+# To compile
+
+pyinstaller --onefile --collect-all openap .\PerformanceDataService\OpenAP_API.py
+pyinstaller --onefile --collect-all openap .\PerformanceDataService\PerformanceCalculator.py
+
+files are in dist. copy from dist to FlightRouteGenerator\FlightRouteGenerator\bin\Release\publish\Services. replace old services.

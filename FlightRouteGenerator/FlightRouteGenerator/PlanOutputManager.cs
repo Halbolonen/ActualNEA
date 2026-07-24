@@ -293,6 +293,33 @@ ZFW: {route.Loadsheet.ZFW} kg
                         {
                             column.Spacing(20);
 
+                            column.Item().Padding(2).BorderBottom(1).BorderLeft(1).BorderRight(1).BorderTop(1).Background(Colors.Grey.Lighten1).Text($"OFP")
+                                .FontSize(16)
+                                .FontColor(Colors.Black)
+                                .AlignCenter()
+                                .SemiBold()
+                                .FontFamily("Consolas");
+
+                            column.Item().AlignRight().Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(65);
+                                    columns.ConstantColumn(65);
+                                });
+
+                                table.Cell().Text("CRZ SYS");
+                                table.Cell().Text("CI 50").AlignRight();
+                            });
+
+                            //column.Item().AlignRight().PaddingTop(10).PaddingRight(10).Text("PIC SIGNATURE: ...............");
+
+                            column.Item().Padding(2).BorderBottom(1).BorderLeft(1).BorderRight(1).BorderTop(1).Background(Colors.Grey.Lighten1).Text("PLANNED FUEL")
+                                .FontSize(16)
+                                .FontColor(Colors.Black)
+                                .AlignCenter()
+                                .SemiBold()
+                                .FontFamily("Consolas");
 
                             column.Item().Padding(2).BorderBottom(1).BorderLeft(1).BorderRight(1).BorderTop(1).Background(Colors.Grey.Lighten1).Text("LOADSHEET")
                                 .FontSize(16)
@@ -300,8 +327,6 @@ ZFW: {route.Loadsheet.ZFW} kg
                                 .AlignCenter()
                                 .SemiBold()
                                 .FontFamily("Consolas");
-
-                            column.Item().AlignRight().PaddingTop(20).PaddingRight(23).Text("PIC SIGNATURE: ...............");
 
                             column.Item().Table(table =>
                                 {
@@ -394,7 +419,7 @@ ZFW: {route.Loadsheet.ZFW} kg
 
                             const double M_TO_FT = 3.28084;
 
-                            void AddLegRow(TableDescriptor table, RouteLeg leg, string legType = "")
+                            void AddLegRow(TableDescriptor table, RouteLeg leg, string legType, int legIndex)
                             {
                                 switch (legType)
                                 {
@@ -408,6 +433,9 @@ ZFW: {route.Loadsheet.ZFW} kg
                                         table.Cell()
                                             .Padding(4)
                                             .Text($"\n{Math.Round(route.DepartureAirport.altitude * M_TO_FT / 100).ToString("000")}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                        table.Cell()
+                                            .Padding(4)
+                                            .Text($"\n---").FontFamily("Consolas").AlignCenter().FontSize(12);
                                         table.Cell()
                                             .Padding(4)
                                             .Text($"\n---").FontFamily("Consolas").AlignCenter().FontSize(12);
@@ -429,6 +457,10 @@ ZFW: {route.Loadsheet.ZFW} kg
                                             .BorderBottom(1)
                                             .Padding(4)
                                             .Text($"\n---").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                        table.Cell()
+                                            .BorderBottom(1)
+                                            .Padding(4)
+                                            .Text($"\n---").FontFamily("Consolas").AlignCenter().FontSize(12);
                                         break;
                                     default:
                                         table.Cell()
@@ -443,6 +475,46 @@ ZFW: {route.Loadsheet.ZFW} kg
                                         table.Cell()
                                             .Padding(4)
                                             .Text($"\n{leg.Waypoint.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                        table.Cell()
+                                            .Padding(4)
+                                            .Text($"\n{leg.Waypoint.OAT - 273.15:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+
+                                        if (legIndex == route.TC_Info.PreviousLegIndex)
+                                        {
+                                                table.Cell()
+                                                .BorderRight(1).Padding(4)
+                                                .Text($"{GLOBAL_SETTINGS.DIRECT_FORMAT}\nT O C\n").FontFamily("Consolas").FontSize(12);
+                                            table.Cell()
+                                                .Padding(4)
+                                                .Text($"\n{ConvertCoordinates.GetPDFDecimalLatyFormat(route.TC_Info.laty)}\n{ConvertCoordinates.GetPDFDecimalLonxFormat(route.TC_Info.lonx)}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                            table.Cell()
+                                                .Padding(4)
+                                                .Text($"\n{Math.Round((double)route.TC_Info.Altitude * M_TO_FT / 100).ToString("000")}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                            table.Cell()
+                                                .Padding(4)
+                                                .Text($"\n{route.TC_Info.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                            table.Cell()
+                                                .Padding(4)
+                                                .Text($"\n{route.TC_Info.OAT - 273.15:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                        }
+                                        if (legIndex == route.TD_Info.PreviousLegIndex)
+                                        {
+                                            table.Cell()
+                                                .BorderRight(1).Padding(4)
+                                                .Text($"{GLOBAL_SETTINGS.DIRECT_FORMAT}\nT O D\n").FontFamily("Consolas").FontSize(12);
+                                            table.Cell()
+                                                .Padding(4)
+                                                .Text($"\n{ConvertCoordinates.GetPDFDecimalLatyFormat(route.TD_Info.laty)}\n{ConvertCoordinates.GetPDFDecimalLonxFormat(route.TD_Info.lonx)}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                            table.Cell()
+                                                .Padding(4)
+                                                .Text($"\n{Math.Round((double)route.TD_Info.Altitude * M_TO_FT / 100).ToString("000")}").AlignCenter().FontFamily("Consolas").FontSize(12);
+                                            table.Cell()
+                                                .Padding(4)
+                                                .Text($"\n{route.TD_Info.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                            table.Cell()
+                                                .Padding(4)
+                                                .Text($"\n{route.TD_Info.OAT - 273.15:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                        }
                                         break;
                                 }
 
@@ -467,6 +539,7 @@ ZFW: {route.Loadsheet.ZFW} kg
                                     columns.ConstantColumn(100);
                                     columns.ConstantColumn(100);
                                     columns.ConstantColumn(100);
+                                    columns.ConstantColumn(100);
                                 });
 
                                 table.Header(header =>
@@ -475,23 +548,29 @@ ZFW: {route.Loadsheet.ZFW} kg
                                     header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("\nLAT\nLONG").FontFamily("Consolas").FontSize(12).SemiBold().AlignCenter();
                                     header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("\n\nFL").FontFamily("Consolas").FontSize(12).SemiBold().AlignCenter();
                                     header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("\n\nTAS").FontFamily("Consolas").FontSize(12).SemiBold().AlignCenter();
+                                    header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("\n\nOAT").FontFamily("Consolas").FontSize(12).SemiBold().AlignCenter();
                                 });
 
-                                AddLegRow(table, route.Legs[0], legType: "departureAirport");
+                                AddLegRow(table, route.Legs[0], legType: "departureAirport", -1);
 
                                 for (int i = 1; i < route.Legs.Count - 1; i++)
                                 {
-                                    AddLegRow(table, route.Legs[i]);
+                                    AddLegRow(table, route.Legs[i], legType:"", i);
                                 }
 
-                                AddLegRow(table, route.Legs[route.Legs.Count - 1], legType: "arrivalAirport");
+                                AddLegRow(table, route.Legs[route.Legs.Count - 1], legType: "arrivalAirport", route.Legs.Count + 1);
                             });
                         });
                 });
 
             });
 
-            bool debugLiveView = false;
+            bool debugLiveView;
+#if DEBUG
+            debugLiveView = true;
+#else
+            debugLiveView = false;
+#endif
 
             if (debugLiveView)
             {

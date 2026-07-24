@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 
 namespace FlightRouteGenerator
 {
@@ -126,6 +128,10 @@ namespace FlightRouteGenerator
             double reserveFuel = Math.Round(await FlightSimulator.GetTaxiOrReserveFuel(reserveParams));
 
             route.Loadsheet.BlockFuel = tripFuel + taxiFuel + reserveFuel;
+            route.Loadsheet.TripFuel = tripFuel;
+            route.Loadsheet.TaxiFuel = taxiFuel;
+            route.Loadsheet.FinalReserveFuel = reserveFuel;
+            
             
             if (route.Loadsheet.BlockFuel > route.Aircraft.MaxFuelCapacity)
             {

@@ -85,16 +85,18 @@ namespace FlightRouteGenerator
             const double M_TO_FT = 3.28084;
 
             double trackDistance = 0;
-            List<PDS_WaypointTrackDistance> WaypointIDToTrackDistance = new List<PDS_WaypointTrackDistance>();
+            List<PDS_InputWaypointInfo> inputWaypointInfoList = new List<PDS_InputWaypointInfo>();
 
             foreach (RouteLeg leg in route.Legs)
             {
                 trackDistance += leg.Length;
-                WaypointIDToTrackDistance.Add(
-                    new PDS_WaypointTrackDistance
+                inputWaypointInfoList.Add(
+                    new PDS_InputWaypointInfo
                     {
                         WaypointID = leg.Waypoint.WaypointID,
-                        TrackDistance = trackDistance
+                        TrackDistance = trackDistance,
+                        laty = leg.Waypoint.laty,
+                        lonx = leg.Waypoint.lonx
                     }
                     );
             }
@@ -111,7 +113,7 @@ namespace FlightRouteGenerator
                 CruiseAltitude = route.CruiseAltitude,
                 RouteTotalDistance = route.TotalDistance,
                 TripFuel = burnedFuel,
-                WaypointIDToTrackDistance = WaypointIDToTrackDistance
+                InputWaypointInfoList = inputWaypointInfoList
             };
 
             string serialisedRequest = JsonSerializer.Serialize(flightRequest);
@@ -123,7 +125,6 @@ namespace FlightRouteGenerator
                 string flightData = await PerformanceDataService.GetCalculation("simulate_flight", HttpMethod.Post, serialisedRequest);
                 simResult = JsonSerializer.Deserialize<PDS_SimulatorResult>(flightData
                        );
-                Console.WriteLine(flightData);
 
                 burnedFuel = simResult.TripFuel;
 
@@ -140,11 +141,15 @@ namespace FlightRouteGenerator
                 }
             }
 
+            route.TC_Info = simResult.TC_Info;
+            route.TD_Info = simResult.TD_Info;
+
             foreach (RouteLeg leg in route.Legs)
             {
-                PDS_WaypointInfo wpInfo = simResult.WaypointIDToInfo[leg.Waypoint.WaypointID];
+                PDS_OutputWaypointInfo wpInfo = simResult.WaypointIDToOutputInfo[leg.Waypoint.WaypointID];
                 leg.Waypoint.Altitude = (int)(M_TO_FT * wpInfo.Altitude);
                 leg.Waypoint.TAS = wpInfo.TAS;
+                leg.Waypoint.OAT = wpInfo.OAT;
             }
 
             return burnedFuel;

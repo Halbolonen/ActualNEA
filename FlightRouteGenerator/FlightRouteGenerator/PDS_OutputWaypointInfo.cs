@@ -7,11 +7,15 @@ using System.Threading.Tasks;
 
 namespace FlightRouteGenerator
 {
-    internal class PDS_WaypointInfo
+    internal class PDS_OutputWaypointInfo
     {
         [JsonPropertyName("tas")]
         public double TAS { get; set; }
         [JsonPropertyName("alt")]
-        public double Altitude { get; set; }
+        public int Altitude { get; set; }
+        [JsonPropertyName("oat")]
+        public double OAT { get; set; }
+        [JsonPropertyName("mach")]
+        public double MachNumber { get; set; }
     }
 }

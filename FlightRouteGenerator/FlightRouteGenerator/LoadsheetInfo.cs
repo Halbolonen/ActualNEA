@@ -22,5 +22,11 @@ namespace FlightRouteGenerator
         // Landing Weight, in kilograms
         public double ZFW { get; set; }
         // Zero Fuel Weight, in kilograms
+        public double FinalReserveFuel { get; set; }
+        // in kilograms
+        public double TripFuel { get; set; }
+        // in kilograms
+        public double TaxiFuel { get; set; }
+        // in kilograms
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace FlightRouteGenerator
@@ -18,7 +19,10 @@ namespace FlightRouteGenerator
         // in feet
         public Aircraft Aircraft { get; set; }
         public LoadsheetInfo Loadsheet { get; set; }
-
+        public PDS_TCorTDInfo TC_Info { get; set; }
+        // information about the Top of Climb point
+        public PDS_TCorTDInfo TD_Info { get; set; }
+        // information about the Top of Descent point
         public Route()
         {
             enrouteWaypointCount = 0;

@@ -11,13 +11,26 @@ performance_calculator = FastAPI()
 class AircraftRequest(BaseModel):
     aircraft_type: str
 
-class WaypointTrackDistance(BaseModel):
+class InputWaypointInfo(BaseModel):
     waypoint_id: str
     track_distance: float
+    latitude: float
+    longitude: float
 
-class WaypointInfo(BaseModel):
+class OutputWaypointInfo(BaseModel):
     tas: float
     alt: int
+    oat: float
+    mach: float
+
+class TCorTDInfo(BaseModel):
+    latitude: float
+    longitude: float
+    altitude: float 
+    tas: float
+    mach: float
+    oat: float
+    previous_leg_index: int
 
 class FlightRequest(BaseModel):
     departure_arprt_alt: int
@@ -27,7 +40,7 @@ class FlightRequest(BaseModel):
     cruise_altitude: float
     route_total_distance: float
     trip_fuel: float
-    waypoint_id_to_track_distance: list[WaypointTrackDistance]
+    input_waypoint_info_list: list[InputWaypointInfo]
 
 class FuelFlowParameters(BaseModel):
     mass: int
@@ -48,12 +61,17 @@ class TaxiOrReserveParameters(BaseModel):
 
 class SimulatorResult(BaseModel):
     trip_fuel: float
-    waypoint_id_to_info: dict[str, WaypointInfo]
+    waypoint_id_to_output_info: dict[str, OutputWaypointInfo]
     cruise_alt: float
+    tc_info: TCorTDInfo
+    td_info: TCorTDInfo
 
 class AltitudeCAS(BaseModel):
     altitude: float
     cas: float
+
+class AltitudeRequest(BaseModel):
+    altitude: float
 
 class FlightPhase(Enum):
     TAKEOFF = 0
@@ -71,6 +89,37 @@ def root():
 def external_cas_to_tas(alt_cas: AltitudeCAS):
     return cas_to_tas(altitude=alt_cas.altitude, cas=alt_cas.cas)
 
+def get_oat_at_altitude(altitude: float):
+    # https://www.grc.nasa.gov/www/k-12/airplane/atmosmet.html
+    ISA_LAPSE_RATE: float = 6.5
+    # loss of air temperature in centigrade per km.
+    t_0: float = 288.15
+    # ISA standard temperature at sea level, in kelvin.
+
+    if (altitude < 11000):
+        return t_0 - (altitude / 1000) * ISA_LAPSE_RATE
+    else:
+        return -56.46
+
+@performance_calculator.post("/get_oat_at_altitude")
+def get_oat_at_altitude_external(altitude_request: AltitudeRequest):
+    return get_oat_at_altitude(altitude_request.altitude)
+
+# FIXME: not needed
+def get_distance_between_geo_coordinates(org_laty: float, org_lonx: float, dst_laty: float, dst_lonx: float):
+    DEG_TO_RAD: float = math.pi / 180
+    EARTH_RADIUS: float = 3440
+    # in nautical miles
+
+    phi1: float = org_laty * DEG_TO_RAD
+    phi2: float = dst_laty * DEG_TO_RAD
+    lambda1: float = org_lonx * DEG_TO_RAD
+    lambda2: float = dst_lonx * DEG_TO_RAD
+
+    # using the haversine formula to find great circle distance between geographical coordinates
+    h: float = math.sin((phi2 - phi1) / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin((lambda2 - lambda1) / 2) ** 2
+    return 2 * EARTH_RADIUS * math.asin(math.sqrt(h))
+
 def cas_to_tas(altitude: float, cas: float):
     # https://www.grc.nasa.gov/www/k-12/airplane/atmosmet.html
 
@@ -84,17 +133,15 @@ def cas_to_tas(altitude: float, cas: float):
     # specific heat ratio for calorically perfect air.
     a_0: float = 340.294
     # speed of sound at sea level, m/s.
-    ISA_LAPSE_RATE = 6.5
+    ISA_LAPSE_RATE: float = 6.5
     # loss of air temperature in centigrade per km.
-    t: float
+    t: float = get_oat_at_altitude(altitude)
     P: float
     if (altitude < 11000):
-        t = t_0 - (altitude / 1000) * ISA_LAPSE_RATE
         P = p_0 * math.pow(t / t_0, 5.256)
         # TODO: label magic number -5.256
         # static pressure at altitude
     else:
-        t = -56.46
         P = 22.65 * math.e ** (1.73 - 0.000157 * altitude)
 
     localSpeedOfSound = math.sqrt(gamma * R * t)
@@ -155,10 +202,13 @@ def simulate_flight(flight_request: FlightRequest):
     cas = api.get_climb_init_vcas(flight_request.acft_request)
     max_fuel_capacity = api.get_aircraft_fuel_capacity(flight_request.acft_request)
     next_waypoint_index = 0
-    next_waypoint_id = flight_request.waypoint_id_to_track_distance[next_waypoint_index].waypoint_id
-    next_waypoint_track_length = flight_request.waypoint_id_to_track_distance[next_waypoint_index].track_distance
-    sim_result: SimulatorResult = SimulatorResult(trip_fuel=0, waypoint_id_to_info={}, cruise_alt=flight_request.cruise_altitude)
+    next_waypoint_id = flight_request.input_waypoint_info_list[next_waypoint_index].waypoint_id
+    next_waypoint_track_length = flight_request.input_waypoint_info_list[next_waypoint_index].track_distance
+    sim_result: SimulatorResult = SimulatorResult(trip_fuel=0, waypoint_id_to_output_info={}, cruise_alt=flight_request.cruise_altitude, 
+                                                  tc_info=TCorTDInfo(latitude=0,longitude=0,altitude=0,tas=0,mach=0,oat=0,previous_leg_index=0), td_info=TCorTDInfo(latitude=0,longitude=0,altitude=0,tas=0,mach=0,oat=0,previous_leg_index=0),)
     cruise_alt: int = flight_request.cruise_altitude
+    toc_reached: bool = False
+    tod_reached: bool = False
 
     constant_cas_climb_vs = api.get_climb_vs_const_cas(flight_request.acft_request)
     constant_cas_climb = api.get_climb_const_vcas(flight_request.acft_request)
@@ -186,7 +236,8 @@ def simulate_flight(flight_request: FlightRequest):
 
     def run_simulation_tick():
         nonlocal remaining_fuel, distance_travelled, descent_track_length, sim_result, next_waypoint_id
-        nonlocal next_waypoint_index, next_waypoint_track_length, flight_request
+        nonlocal next_waypoint_index, next_waypoint_track_length, flight_request, phase_of_flight
+        nonlocal toc_reached, tod_reached
         flow: float
         angle_of_climb: float
 
@@ -206,15 +257,58 @@ def simulate_flight(flight_request: FlightRequest):
                     remaining_fuel, max_fuel_capacity, flight_request.zfw)
                 distance_travelled += (
                     ff_params.tas * dt * math.cos(angle_of_climb) / M_PER_NMI)
+
+                if (ff_params.alt == cruise_alt and not toc_reached):
+                    previous_waypoint = flight_request.input_waypoint_info_list[next_waypoint_index - 1]
+                    next_waypoint = flight_request.input_waypoint_info_list[next_waypoint_index]
+                    previous_track_dist: float = previous_waypoint.track_distance
+                    next_track_dist: float = next_waypoint.track_distance
+                    distance_between_waypoints: float = next_track_dist - previous_track_dist
+                    distance_covered_between_waypoints: float = distance_travelled - previous_track_dist
+                    lat_difference = next_waypoint.latitude - previous_waypoint.latitude
+                    lon_difference = next_waypoint.longitude - previous_waypoint.longitude
+                    travelled_distance_to_leg_length_ratio = distance_covered_between_waypoints / distance_between_waypoints
+                    sim_result.tc_info = TCorTDInfo(
+                        latitude=previous_waypoint.latitude + travelled_distance_to_leg_length_ratio * lat_difference,
+                        longitude=previous_waypoint.longitude + travelled_distance_to_leg_length_ratio * lon_difference,
+                        altitude=ff_params.alt,
+                        tas=ff_params.tas,
+                        mach=0,
+                        oat=get_oat_at_altitude(ff_params.alt),
+                        previous_leg_index=next_waypoint_index - 1
+                    )
+                    toc_reached = True
+
+                if (toc_reached and ff_params.alt < cruise_alt and not tod_reached):
+                    previous_waypoint = flight_request.input_waypoint_info_list[next_waypoint_index - 1]
+                    next_waypoint = flight_request.input_waypoint_info_list[next_waypoint_index]
+                    previous_track_dist: float = previous_waypoint.track_distance
+                    next_track_dist: float = next_waypoint.track_distance
+                    distance_between_waypoints: float = next_track_dist - previous_track_dist
+                    distance_covered_between_waypoints: float = distance_travelled - previous_track_dist
+                    lat_difference = next_waypoint.latitude - previous_waypoint.latitude
+                    lon_difference = next_waypoint.longitude - previous_waypoint.longitude
+                    travelled_distance_to_leg_length_ratio = distance_covered_between_waypoints / distance_between_waypoints
+                    sim_result.td_info = TCorTDInfo(
+                        latitude=previous_waypoint.latitude + travelled_distance_to_leg_length_ratio * lat_difference,
+                        longitude=previous_waypoint.longitude + travelled_distance_to_leg_length_ratio * lon_difference,
+                        altitude=ff_params.alt,
+                        tas=ff_params.tas,
+                        mach=0,
+                        oat=get_oat_at_altitude(ff_params.alt),
+                        previous_leg_index=next_waypoint_index - 1
+                    )
+                    tod_reached = True
                 
-                if (math.ceil(distance_travelled) >= next_waypoint_track_length and next_waypoint_index < len(flight_request.waypoint_id_to_track_distance)):
-                    sim_result.waypoint_id_to_info[next_waypoint_id] = WaypointInfo(alt=0,tas=0)
-                    sim_result.waypoint_id_to_info[next_waypoint_id].alt = round(ff_params.alt)
-                    sim_result.waypoint_id_to_info[next_waypoint_id].tas = ff_params.tas
+                if (math.ceil(distance_travelled) >= next_waypoint_track_length and next_waypoint_index < len(flight_request.input_waypoint_info_list)):
+                    sim_result.waypoint_id_to_output_info[next_waypoint_id] = OutputWaypointInfo(alt=0,tas=0,oat=0,mach=0)
+                    sim_result.waypoint_id_to_output_info[next_waypoint_id].alt = round(ff_params.alt)
+                    sim_result.waypoint_id_to_output_info[next_waypoint_id].tas = ff_params.tas
+                    sim_result.waypoint_id_to_output_info[next_waypoint_id].oat = get_oat_at_altitude(ff_params.alt)
                     next_waypoint_index += 1
-                    if (next_waypoint_index < len(flight_request.waypoint_id_to_track_distance)):
-                        next_waypoint_id = flight_request.waypoint_id_to_track_distance[next_waypoint_index].waypoint_id
-                        next_waypoint_track_length = flight_request.waypoint_id_to_track_distance[next_waypoint_index].track_distance
+                    if (next_waypoint_index < len(flight_request.input_waypoint_info_list)):
+                        next_waypoint_id = flight_request.input_waypoint_info_list[next_waypoint_index].waypoint_id
+                        next_waypoint_track_length = flight_request.input_waypoint_info_list[next_waypoint_index].track_distance
 
 
                 return
@@ -225,7 +319,6 @@ def simulate_flight(flight_request: FlightRequest):
         nonlocal climb_and_cruise_track_length, cas
 
         descent_track_length = 0
-        #print("desc_alt:",params.alt,"descent_xover_alt_const_mach:",descent_xover_alt_const_mach,"\ndescent_xover_alt_const_cas:",descent_xover_alt_const_cas,"flight_request.arrival_arprt_alt:",flight_request.arrival_arprt_alt)
 
         # entering constant mach stage of descent
         mach = descent_const_mach
@@ -261,7 +354,6 @@ def simulate_flight(flight_request: FlightRequest):
         if (distance_travelled >= climb_and_cruise_track_length):
                 cruise_alt = ff_params.alt
                 continue_climb = False
-                print("stopping climb at",cruise_alt)
                 if (flight_level_is_odd(flight_request.cruise_altitude) and not flight_level_is_odd(cruise_alt) or not flight_level_is_odd(flight_request.cruise_altitude) and flight_level_is_odd(cruise_alt)):
                     cruise_alt = (round(cruise_alt * M_TO_FT / 1000) + 1) * 1000 * FT_TO_M
                 else:
@@ -285,7 +377,6 @@ def simulate_flight(flight_request: FlightRequest):
     # entering constant cas climb
     ff_params.vs = constant_cas_climb_vs
     cas = constant_cas_climb
-    print("cc:",continue_climb)
     while (ff_params.alt < climb_xover_alt_const_mach and distance_travelled < climb_and_cruise_track_length and continue_climb and ff_params.alt < flight_request.cruise_altitude):
         ff_params.tas = cas_to_tas(ff_params.alt, cas)
         run_simulation_tick()
@@ -294,7 +385,6 @@ def simulate_flight(flight_request: FlightRequest):
     # entering constant mach climb
     ff_params.vs = constant_mach_climb_vs
     mach = constant_climb_mach
-    print("cc:",continue_climb)
     while (ff_params.alt < flight_request.cruise_altitude and distance_travelled < climb_and_cruise_track_length and continue_climb and ff_params.alt < flight_request.cruise_altitude):
         ff_params.tas = mach_to_tas(ff_params.alt, mach)
         run_simulation_tick()
@@ -309,7 +399,7 @@ def simulate_flight(flight_request: FlightRequest):
         descent_ff_params = ff_params.model_copy(deep=True)
         simulate_descent(params=descent_ff_params)
 
-    # entering cruise
+    # entering cruise   
     phase_of_flight = FlightPhase.CRUISE
     ff_params.vs = 0
     mach = cruise_mach
@@ -326,9 +416,9 @@ def simulate_flight(flight_request: FlightRequest):
     sim_result.trip_fuel = trip_fuel_estimate - remaining_fuel
     sim_result.cruise_alt = cruise_alt
 
-    sim_result.waypoint_id_to_info[flight_request.waypoint_id_to_track_distance[-1].waypoint_id] = WaypointInfo(alt=0,tas=0)
-    sim_result.waypoint_id_to_info[flight_request.waypoint_id_to_track_distance[-1].waypoint_id].alt = flight_request.arrival_arprt_alt
-    sim_result.waypoint_id_to_info[flight_request.waypoint_id_to_track_distance[-1].waypoint_id].tas = 0
+    sim_result.waypoint_id_to_output_info[flight_request.input_waypoint_info_list[-1].waypoint_id] = OutputWaypointInfo(alt=0,tas=0, oat=0, mach=0)
+    sim_result.waypoint_id_to_output_info[flight_request.input_waypoint_info_list[-1].waypoint_id].alt = flight_request.arrival_arprt_alt
+    sim_result.waypoint_id_to_output_info[flight_request.input_waypoint_info_list[-1].waypoint_id].tas = 0
     # forcing last waypoint altitude to be ground level at the arrival airport
     # because different aircraft types may produce different slight inconsistencies 
     # in distance_travelled vs route_total_distance (to the order of < 0.5 nmi)
