@@ -10,37 +10,72 @@ namespace FlightRouteGenerator
         private static async Task CreateNewFlightPlan()
         {
             Console.WriteLine("\nCREATING A NEW FLIGHT PLAN");
+            Console.WriteLine("The ICAO codes of the aircraft types that the program supports are as follows:\n");
+            Console.WriteLine(string.Join(", ", AircraftPerformanceAnalyser.SupportedAircraftTypes.ToArray()));
+            Console.CursorVisible = true;
+            Console.Write("\nEnter aircraft type ICAO code: ");
+            string acftTypeInput = Console.ReadLine().ToUpper();
             Console.Write("\nEnter departure airport ICAO code: ");
             Console.CursorVisible = true;
             string departureInput = Console.ReadLine().ToUpper();
             Console.Write("Enter arrival airport ICAO code: ");
             string arrivalInput = Console.ReadLine().ToUpper();
 
-            Console.Write("Enter aircraft type ICAO code: ");
-            string acftTypeInput = Console.ReadLine().ToUpper();
-            Console.CursorVisible = false;
+            AirportRecord departureAirport = new AirportRecord();
+            AirportRecord arrivalAirport = new AirportRecord();
+            List<UserInputIssue> inputIssues = new List<UserInputIssue>();
 
             if (departureInput == arrivalInput)
             {
-                throw new InvalidRouteInputException();
+                inputIssues.Add(UserInputIssue.DepArrAirportsAreIdentical);
             }
-
-            AirportRecord departureAirport;
-            AirportRecord arrivalAirport;
 
             try
             {
                 departureAirport = NavdataInteractor.FindAirportByIdent(departureInput);
+            }
+            catch (AirportNotFoundByIdentException)
+            {
+                inputIssues.Add(UserInputIssue.DepartureAirport);
+            }
+
+            try
+            {
                 arrivalAirport = NavdataInteractor.FindAirportByIdent(arrivalInput);
             }
             catch (AirportNotFoundByIdentException)
             {
-                throw new InvalidRouteInputException();
+                inputIssues.Add(UserInputIssue.ArrivalAirport);
             }
 
             if (!AircraftPerformanceAnalyser.SupportedAircraftTypes.Contains(acftTypeInput))
             {
-                throw new InvalidAircraftTypeInputException();
+                inputIssues.Add(UserInputIssue.AircraftType);
+            }
+
+            if (inputIssues.Count > 0)
+            {
+                Console.WriteLine();
+                foreach (UserInputIssue issue in inputIssues)
+                {
+                    switch (issue)
+                    {
+                        case UserInputIssue.AircraftType:
+                            Console.WriteLine("Invalid aircraft type input. Only enter valid, supported ICAO aircraft types.");
+                            break;
+                        case UserInputIssue.DepartureAirport:
+                            Console.WriteLine("Invalid departure airport input. Only enter valid ICAO airport codes.");
+                            break;
+                        case UserInputIssue.ArrivalAirport:
+                            Console.WriteLine("Invalid arrival airport input. Only enter valid ICAO airport codes.");
+                            break;
+                        case UserInputIssue.DepArrAirportsAreIdentical:
+                            Console.WriteLine("Departure and arrival airports cannot be the same.");
+                            break;
+                    }
+                }
+                Console.WriteLine('\n');
+                throw new FatalUserInputException();
             }
 
 
@@ -147,18 +182,10 @@ namespace FlightRouteGenerator
                         {
                             await CreateNewFlightPlan();
                         }
-                        catch (InvalidRouteInputException)
+                        catch (FatalUserInputException)
                         {
-                            Console.WriteLine("\n\nInvalid input.\nOnly enter different valid ICAO airport codes.");
+                            Console.WriteLine("Your invalid inputs mean that the creation of the flight plan must be aborted.");
                         }
-                        catch (InvalidAircraftTypeInputException)
-                        {
-                            Console.WriteLine("\n\nInvalid input.\nOnly enter valid, supported ICAO aircraft types.");
-                            Console.WriteLine("Supported aircraft types are:\n");
-
-                            Console.WriteLine(string.Join(", ", AircraftPerformanceAnalyser.SupportedAircraftTypes.ToArray()));
-                        }
-
                         break;
                     case 1:
                         programRunning = false;

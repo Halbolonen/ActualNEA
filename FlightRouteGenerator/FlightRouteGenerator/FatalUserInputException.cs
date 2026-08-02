@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FlightRouteGenerator
 {
-    internal class InvalidAircraftTypeInputException : Exception
+    internal class FatalUserInputException : Exception
     {
     }
 }
