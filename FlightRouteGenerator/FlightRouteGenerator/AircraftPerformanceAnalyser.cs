@@ -104,7 +104,8 @@ namespace FlightRouteGenerator
                 TAS = TAXI_SPEED,
                 Altitude = route.DepartureAirport.altitude,
                 Time = TAXI_TIME,
-                AircraftType = route.Aircraft.ICAOIdent
+                AircraftType = route.Aircraft.ICAOIdent,
+                IsTaxiParams = true
             };
 
             double taxiFuel = Math.Round(await FlightSimulator.GetTaxiOrReserveFuel(taxiParams));
@@ -118,11 +119,12 @@ namespace FlightRouteGenerator
                     JsonSerializer.Serialize(new PDS_AltitudeCAS
                     {
                         Altitude = 1500 * FT_TO_M + route.ArrivalAirport.altitude,
-                        CAS = route.Aircraft.FinalApproachCAS
+                        CAS = route.Aircraft.DescentConstCAS
                     }))),
                 Altitude = (int)Math.Round(1500 * FT_TO_M + route.ArrivalAirport.altitude),
                 Time = RESERVE_TIME,
-                AircraftType = route.Aircraft.ICAOIdent
+                AircraftType = route.Aircraft.ICAOIdent,
+                IsTaxiParams = false
             };
 
             double reserveFuel = Math.Round(await FlightSimulator.GetTaxiOrReserveFuel(reserveParams));

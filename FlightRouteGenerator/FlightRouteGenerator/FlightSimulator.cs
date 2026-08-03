@@ -157,9 +157,20 @@ namespace FlightRouteGenerator
 
         public static async Task<double> GetTaxiOrReserveFuel(PDS_TaxiOrReserveFuelParameters taxiReserveParams)
         {
+            string api_path;
+
+            if (taxiReserveParams.IsTaxiParams)
+            {
+                api_path = "get_taxi_fuel";
+            }
+            else
+            {
+                api_path = "get_reserve_fuel";
+            }
+
             string serialisedTaxiReserveParams = JsonSerializer.Serialize(taxiReserveParams);
             double consumedFuel = double.Parse(
-                await PerformanceDataService.GetCalculation("get_taxi_or_reserve_fuel", HttpMethod.Post, serialisedTaxiReserveParams)
+                await PerformanceDataService.GetCalculation(api_path, HttpMethod.Post, serialisedTaxiReserveParams)
                 );
             double additiveFuel = consumedFuel;
             bool fuelOptimal = false;
@@ -169,7 +180,7 @@ namespace FlightRouteGenerator
                 taxiReserveParams.Mass += (int)Math.Round(additiveFuel);
                 serialisedTaxiReserveParams = JsonSerializer.Serialize(taxiReserveParams);
                 consumedFuel = double.Parse(
-                await PerformanceDataService.GetCalculation("get_taxi_or_reserve_fuel", HttpMethod.Post, serialisedTaxiReserveParams)
+                await PerformanceDataService.GetCalculation(api_path, HttpMethod.Post, serialisedTaxiReserveParams)
                 );
                 taxiReserveParams.Mass -= (int)Math.Round(additiveFuel);
 

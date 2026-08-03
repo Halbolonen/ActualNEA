@@ -427,8 +427,8 @@ def simulate_flight(flight_request: FlightRequest):
 
     return sim_result
 
-@performance_calculator.post("/get_taxi_or_reserve_fuel")
-def get_taxi_or_reserve_fuel(tr_params: TaxiOrReserveParameters):
+@performance_calculator.post("/get_reserve_fuel")
+def get_reserve_fuel(tr_params: TaxiOrReserveParameters):
     dt: int = 1
     # in seconds
     elapsed_time: int = 0
@@ -453,6 +453,35 @@ def get_taxi_or_reserve_fuel(tr_params: TaxiOrReserveParameters):
         consumed_fuel += flow * dt
         elapsed_time += dt
         
+    return consumed_fuel
+
+@performance_calculator.post("/get_taxi_fuel")
+def get_taxi_fuel(tr_params: TaxiOrReserveParameters):
+    dt: int = 1
+    # in seconds
+    elapsed_time: int = 0
+    # in seconds
+    consumed_fuel: float = 0
+    # in kg
+
+    ff_params: FuelFlowParameters = FuelFlowParameters(
+        mass=tr_params.mass,
+        tas=tr_params.tas,
+        alt=tr_params.alt,
+        vs=0,
+        acc=0,
+        dT=0,
+        aircraft_type=tr_params.aircraft_type
+    )
+
+    required_time: int = tr_params.time * 60
+    engine_model = api.get_engine_model(AircraftRequest(aircraft_type=tr_params.aircraft_type))
+    while (elapsed_time < required_time):
+        flow: float = engine_model["ff_idl"]
+        ff_params.mass -= flow * dt
+        consumed_fuel += flow * dt
+        elapsed_time += dt
+
     return consumed_fuel
 
 if __name__ == "__main__":

@@ -74,7 +74,7 @@ namespace FlightRouteGenerator
 #endif
 
             pdcalcProcess = new Process();
-            pdcalcProcess.StartInfo.UseShellExecute = false;
+            pdcalcProcess.StartInfo.UseShellExecute = true;
             pdcalcProcess.StartInfo.CreateNoWindow = true;
 
 #if DEBUG

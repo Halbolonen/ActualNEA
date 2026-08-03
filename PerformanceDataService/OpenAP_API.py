@@ -190,6 +190,9 @@ def get_fuelflow_model(acft_type: str):
         fuelflow_models[acft_type] = FuelFlow(ac=acft_type, use_synonym=True)
     return fuelflow_models[acft_type]
 
+def get_engine_model(acft_request: AircraftRequest):
+    return prop.engine(get_aircraft_info(acft_request)["engine"]["default"])
+
 @api.post("/get_fuelflow")
 def get_fuelflow(in_ff_params: FuelFlowParameters):
     ff_params = in_ff_params.model_copy(deep=True)

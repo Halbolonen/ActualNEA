@@ -20,5 +20,12 @@ namespace FlightRouteGenerator
         public int Time { get; set; }
         [JsonPropertyName("aircraft_type")]
         public string AircraftType { get; set; }
+        [JsonIgnore]
+        public bool IsTaxiParams { get; set; }
+
+        public PDS_TaxiOrReserveFuelParameters()
+        {
+            IsTaxiParams = false;
+        }
     }
 }
