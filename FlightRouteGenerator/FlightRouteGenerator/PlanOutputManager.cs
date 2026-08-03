@@ -582,7 +582,14 @@ ZFW: {route.Loadsheet.ZFW} kg
                                     .Padding(4);
                             }
 
-                            column.Item().Text($"Total ground distance: {route.TotalDistance:F0} nmi").FontFamily("Consolas").FontSize(12).AlignLeft();
+                            column.Item().PaddingBottom(50).Text($"Total ground distance: {route.TotalDistance:F0} nmi").FontFamily("Consolas").FontSize(12).AlignLeft();
+
+                            column.Item().Padding(2).BorderBottom(1).BorderLeft(1).BorderRight(1).BorderTop(1).Background(Colors.Grey.Lighten1).Text("FLIGHT LOG")
+                                .FontSize(16)
+                                .FontColor(Colors.Black)
+                                .AlignCenter()
+                                .SemiBold()
+                                .FontFamily("Consolas");
 
                             column.Item().Table(table =>
                             {

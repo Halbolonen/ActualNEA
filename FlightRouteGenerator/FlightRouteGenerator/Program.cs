@@ -21,6 +21,8 @@ namespace FlightRouteGenerator
             Console.Write("Enter arrival airport ICAO code: ");
             string arrivalInput = Console.ReadLine().ToUpper();
 
+            Console.CursorVisible = false;
+
             AirportRecord departureAirport = new AirportRecord();
             AirportRecord arrivalAirport = new AirportRecord();
             List<UserInputIssue> inputIssues = new List<UserInputIssue>();
