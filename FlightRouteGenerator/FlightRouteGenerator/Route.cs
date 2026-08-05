@@ -32,7 +32,7 @@ namespace FlightRouteGenerator
             previousLeg.Airway.isDirect = true;
             foreach (RouteLeg leg in Legs)
             {
-                if (leg.Airway.AirwayID != previousLeg.Airway.AirwayID)
+                if (leg.Airway.airwayName != previousLeg.Airway.airwayName)
                 {
                     if (previousLeg.Airway.isDirect || leg.isAirportLeg)
                     {
@@ -43,8 +43,8 @@ namespace FlightRouteGenerator
                         singleLineRoute += $"{previousLeg.Airway.airwayName} ";
                     }
                     singleLineRoute += $"{leg.Waypoint.ident} ";
-                    previousLeg = leg;
                 }
+                previousLeg = leg;
             }
 
             return singleLineRoute;
