@@ -135,7 +135,7 @@ namespace FlightRouteGenerator
             route.Loadsheet.FinalReserveFuel = reserveFuel;
             
             
-            if (route.Loadsheet.BlockFuel > route.Aircraft.MaxFuelCapacity)
+            if (route.Loadsheet.BlockFuel > route.Aircraft.MaxFuelCapacity || route.Loadsheet.BlockFuel > route.Aircraft.MTOW - route.Loadsheet.ZFW)
             {
                 throw new InsufficientAircraftRangeException();
             }

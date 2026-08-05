@@ -14,7 +14,7 @@ namespace FlightRouteGenerator
         [JsonPropertyName("cruise_alt")]
         public double CruiseAltitude { get; set; }
         [JsonPropertyName("waypoint_id_to_output_info")]
-        public Dictionary<string, PDS_OutputWaypointInfo> WaypointIDToOutputInfo { get; set; }
+        public Dictionary<string, WaypointTargets> WaypointIDToOutputInfo { get; set; }
         [JsonPropertyName("tc_info")]
         public PDS_TCorTDInfo TC_Info { get; set; }
         [JsonPropertyName("td_info")]

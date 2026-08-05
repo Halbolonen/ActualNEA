@@ -146,7 +146,7 @@ namespace FlightRouteGenerator
 
             foreach (RouteLeg leg in route.Legs)
             {
-                PDS_OutputWaypointInfo wpInfo = simResult.WaypointIDToOutputInfo[leg.Waypoint.WaypointID];
+                WaypointTargets wpInfo = simResult.WaypointIDToOutputInfo[leg.Waypoint.WaypointID];
                 leg.Waypoint.Altitude = (int)(M_TO_FT * wpInfo.Altitude);
                 leg.Waypoint.TAS = wpInfo.TAS;
                 leg.Waypoint.OAT = wpInfo.OAT;
