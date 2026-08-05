@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FlightRouteGenerator
 {
-    internal class PDS_OutputWaypointInfo
+    internal class WaypointTargets
     {
         [JsonPropertyName("tas")]
         public double TAS { get; set; }
