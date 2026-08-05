@@ -106,7 +106,7 @@ namespace FlightRouteGenerator
                 Console.Clear();
                 Console.WriteLine("Use the menu to select the formats you want your flight plan to be outputted in.\n");
                 // no console output option, just give a correctly formatted route in the pdf that you can paste into flight route plotting software/to read.
-                List<string> outputOptions = new List<string> { "Console", "PDF File", "X-Plane route file (.fms)", "Microsoft Flight Simulator route file (.pln)" };
+                List<string> outputOptions = new List<string> {"PDF File", "X-Plane route file (.fms)", "Microsoft Flight Simulator route file (.pln)" };
                 HashSet<int> choices = MultipleChoiceMenu.GetMultiSelectChoice(outputOptions);
                 List<string> outputSuccessMessages = new List<string>();
 
@@ -115,18 +115,14 @@ namespace FlightRouteGenerator
                     switch (choice)
                     {
                         case 0:
-                            PlanOutputManager.OutputRouteToConsole(route);
-                            break;
-
-                        case 1:
                             outputSuccessMessages.Add(PlanOutputManager.OutputRouteToPDFFile(route));
                             break;
 
-                        case 2:
+                        case 1:
                             outputSuccessMessages.Add(PlanOutputManager.OutputRouteToFMSFile(route));
                             break;
 
-                        case 3:
+                        case 2:
                             outputSuccessMessages.Add(PlanOutputManager.OutputRouteToPLNFile(route));
                             break;
                     }

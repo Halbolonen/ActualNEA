@@ -29,50 +29,6 @@ namespace FlightRouteGenerator
         [DllImport("shell32", CharSet = CharSet.Unicode, ExactSpelling = true, PreserveSig = false)]
         private static extern string SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid rfid, uint dwFlags, nint hToken = 0);
 
-        public static void OutputRouteToConsole(Route route)
-        {
-            Console.WriteLine("\nYour route:\n");
-            Console.WriteLine($"{route.DepartureAirport.ident} at {route.DepartureAirport.altitude * M_TO_FT:F0} ft altitude\n---------------");
-
-            foreach (RouteLeg leg in route.Legs)
-            {
-                if (leg.Airway.isDirect)
-                {
-                    leg.Airway.airwayName = GLOBAL_SETTINGS.DIRECT_FORMAT;
-                }
-                Console.WriteLine($"{leg.Airway.airwayName} {leg.Waypoint.ident} at {leg.Waypoint.Altitude} ft altitude (leg length {leg.Length:F1} nmi) \n---------------");
-            }
-
-            Console.WriteLine($"\n\nRoute in a format suitable for entry into a flight plotting tool:\n\n");
-            Console.Write($"{route.DepartureAirport.ident} ");
-
-            foreach (RouteLeg leg in route.Legs)
-            {
-                if (leg.Airway.isDirect)
-                {
-                    leg.Airway.airwayName = GLOBAL_SETTINGS.DIRECT_FORMAT;
-                }
-                Console.Write($"{leg.Airway.airwayName} {leg.Waypoint.ident} ");
-            }
-
-            Console.WriteLine($"\n\nTotal distance: {route.TotalDistance:F1} nmi");
-
-            DrawLine();
-            Console.WriteLine("\nLOADSHEET DATA BELOW\n");
-            DrawLine();
-            Console.WriteLine();
-
-            Console.WriteLine(
-@$"PAX: {route.Loadsheet.Pax}
-BLOCK FUEL: {route.Loadsheet.BlockFuel} kg
-BAGS/CARGO: {route.Loadsheet.BagsAndCargo} kg
-PAYLOAD: {route.Loadsheet.Payload} kg
-TOW: {route.Loadsheet.TOW} kg
-LAW: {route.Loadsheet.LAW} kg
-ZFW: {route.Loadsheet.ZFW} kg
-                ");
-        }
-
         public static string OutputRouteToFMSFile(Route route)
         {
             // https://developer.x-plane.com/article/flightplan-files-v11-fms-file-format/
