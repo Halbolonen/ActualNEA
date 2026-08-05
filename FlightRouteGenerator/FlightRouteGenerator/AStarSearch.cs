@@ -132,7 +132,6 @@ namespace FlightRouteGenerator
 
         public AStarNode ExpandGraphFromNodeUntilDestinationReached(AStarNode originNode, AirportRecord destinationAirport)
         {
-            double lowestH = double.MaxValue;
             routeGreatCircleDistance = Navigator.GetDistanceBetweenGeoCoordinates(originNode.associatedWaypoint.laty, originNode.associatedWaypoint.lonx, destinationAirport.laty, destinationAirport.lonx);
 
             AStarNode currentNode = originNode;
@@ -145,11 +144,6 @@ namespace FlightRouteGenerator
                 try
                 {
                     currentNode = ExploreOpenSet(currentNode, destinationAirport);
-                    if (currentNode.hScore < lowestH)
-                    {
-                        lowestH = currentNode.hScore;
-                        Console.WriteLine(currentNode.associatedWaypoint.ident);
-                    }
                 }
                 catch (OpenSetEmptyException)
                 {
