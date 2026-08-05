@@ -105,7 +105,18 @@ def get_oat_at_altitude(altitude: float):
 def get_oat_at_altitude_external(altitude_request: AltitudeRequest):
     return get_oat_at_altitude(altitude_request.altitude)
 
+def get_local_speed_of_sound(altitude: float):
+    # https://www.grc.nasa.gov/www/k-12/airplane/atmosmet.html
+    R: float = 287
+    # Gas constant for air, in m^2/s^2/K.
+    gamma: float = 1.40
+    # specific heat ratio for calorically perfect air.
+    t: float = get_oat_at_altitude(altitude)
 
+    localSpeedOfSound = math.sqrt(gamma * R * t)
+    # https://www.grc.nasa.gov/www/k-12/VirtualAero/BottleRocket/airplane/sound.html
+
+    return localSpeedOfSound
 
 def cas_to_tas(altitude: float, cas: float):
     # https://www.grc.nasa.gov/www/k-12/airplane/atmosmet.html
@@ -114,14 +125,8 @@ def cas_to_tas(altitude: float, cas: float):
     # ISA standard temperature at sea level, in kelvin.
     p_0: float = 101.325
     # ISA standard pressure at sea level, in kilopascals.
-    R: float = 287
-    # Gas constant for air, in m^2/s^2/K.
-    gamma: float = 1.40
-    # specific heat ratio for calorically perfect air.
     a_0: float = 340.294
     # speed of sound at sea level, m/s.
-    ISA_LAPSE_RATE: float = 6.5
-    # loss of air temperature in centigrade per km.
     t: float = get_oat_at_altitude(altitude)
     P: float
     if (altitude < 11000):
@@ -131,7 +136,7 @@ def cas_to_tas(altitude: float, cas: float):
     else:
         P = 22.65 * math.e ** (1.73 - 0.000157 * altitude)
 
-    localSpeedOfSound = math.sqrt(gamma * R * t)
+    localSpeedOfSound = get_local_speed_of_sound(altitude=altitude)
     # https://www.grc.nasa.gov/www/k-12/VirtualAero/BottleRocket/airplane/sound.html
 
     qc: float = p_0 * (math.pow(1 + 0.2 * math.pow(cas / a_0, 2), 3.5) - 1)
@@ -260,7 +265,7 @@ def simulate_flight(flight_request: FlightRequest):
                         longitude=previous_waypoint.longitude + travelled_distance_to_leg_length_ratio * lon_difference,
                         altitude=ff_params.alt,
                         tas=ff_params.tas,
-                        mach=mach,
+                        mach=ff_params.tas / get_local_speed_of_sound(ff_params.alt),
                         oat=get_oat_at_altitude(ff_params.alt),
                         previous_leg_index=next_waypoint_index - 1
                     )
@@ -281,7 +286,7 @@ def simulate_flight(flight_request: FlightRequest):
                         longitude=previous_waypoint.longitude + travelled_distance_to_leg_length_ratio * lon_difference,
                         altitude=ff_params.alt,
                         tas=ff_params.tas,
-                        mach=mach,
+                        mach=ff_params.tas / get_local_speed_of_sound(ff_params.alt),
                         oat=get_oat_at_altitude(ff_params.alt),
                         previous_leg_index=next_waypoint_index - 1
                     )
@@ -292,7 +297,7 @@ def simulate_flight(flight_request: FlightRequest):
                     sim_result.waypoint_id_to_output_info[next_waypoint_id].alt = round(ff_params.alt)
                     sim_result.waypoint_id_to_output_info[next_waypoint_id].tas = ff_params.tas
                     sim_result.waypoint_id_to_output_info[next_waypoint_id].oat = get_oat_at_altitude(ff_params.alt)
-                    sim_result.waypoint_id_to_output_info[next_waypoint_id].mach = mach
+                    sim_result.waypoint_id_to_output_info[next_waypoint_id].mach = ff_params.tas / get_local_speed_of_sound(ff_params.alt)
                     next_waypoint_index += 1
                     if (next_waypoint_index < len(flight_request.input_waypoint_info_list)):
                         next_waypoint_id = flight_request.input_waypoint_info_list[next_waypoint_index].waypoint_id

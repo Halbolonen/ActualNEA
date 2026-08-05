@@ -477,7 +477,7 @@ namespace FlightRouteGenerator
                                             .Text($"\n{Math.Round((double)leg.Waypoint.Altitude / 100).ToString("000")}").AlignCenter().FontFamily("Consolas").FontSize(12);
                                         table.Cell()
                                             .Padding(4)
-                                            .Text($"{leg.Waypoint.MachNumber}\n{leg.Waypoint.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                            .Text($"{leg.Waypoint.MachNumber:F2}\n{leg.Waypoint.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
                                         table.Cell()
                                             .Padding(4)
                                             .Text($"\n{leg.Waypoint.OAT - 273.15:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
@@ -495,7 +495,7 @@ namespace FlightRouteGenerator
                                                 .Text($"\n{Math.Round((double)route.TC_Info.Altitude * M_TO_FT / 100).ToString("000")}").AlignCenter().FontFamily("Consolas").FontSize(12);
                                             table.Cell()
                                                 .Padding(4)
-                                                .Text($"{route.TC_Info.Mach}\n{route.TC_Info.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                                .Text($"{route.TC_Info.Mach:F2}\n{route.TC_Info.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
                                             table.Cell()
                                                 .Padding(4)
                                                 .Text($"\n{route.TC_Info.OAT - 273.15:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
@@ -513,7 +513,7 @@ namespace FlightRouteGenerator
                                                 .Text($"\n{Math.Round((double)route.TD_Info.Altitude * M_TO_FT / 100).ToString("000")}").AlignCenter().FontFamily("Consolas").FontSize(12);
                                             table.Cell()
                                                 .Padding(4)
-                                                .Text($"{route.TD_Info.Mach}\n{route.TD_Info.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                                .Text($"{route.TD_Info.Mach:F2}\n{route.TD_Info.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
                                             table.Cell()
                                                 .Padding(4)
                                                 .Text($"\n{route.TD_Info.OAT - 273.15:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
