@@ -23,6 +23,11 @@ namespace FlightRouteGenerator
         private static string HOST_CALC_SOCKET = $"{HOST_IP}:{HOST_CALC_PORT}";
         private static string HOST_URL = $"http://{HOST_SOCKET}";
         private static string HOST_CALC_URL = $"http://{HOST_CALC_SOCKET}";
+#if DEBUG
+        private static bool IS_DEBUG = true;
+#else
+        private static bool IS_DEBUG = false;
+#endif
 
         private static void KillPDSProcesses()
         {
@@ -60,7 +65,7 @@ namespace FlightRouteGenerator
             KillPDSProcesses();
 
             pdapiProcess = new Process();
-            pdapiProcess.StartInfo.UseShellExecute = false;
+            pdapiProcess.StartInfo.UseShellExecute = IS_DEBUG;
             pdapiProcess.StartInfo.CreateNoWindow = true;
 
 #if DEBUG
@@ -70,11 +75,11 @@ namespace FlightRouteGenerator
             // uvicorn is the process that exposes the PDS python script as a fastAPI endpoint
             // over http.
 #else
-            pdapiProcess.StartInfo.FileName = "Services/OpenAP_API.exe";
+            pdapiProcess.StartInfo.FileName = $"{Environment.CurrentDirectory}\\Services\\OpenAP_API.exe";
 #endif
 
             pdcalcProcess = new Process();
-            pdcalcProcess.StartInfo.UseShellExecute = true;
+            pdcalcProcess.StartInfo.UseShellExecute = IS_DEBUG;
             pdcalcProcess.StartInfo.CreateNoWindow = true;
 
 #if DEBUG
@@ -82,12 +87,13 @@ namespace FlightRouteGenerator
             pdcalcProcess.StartInfo.Arguments = $"-m uvicorn PerformanceCalculator:performance_calculator --host 127.0.0.1 --port 9000";
             // same for the performance data calculator
 #else
-            pdcalcProcess.StartInfo.FileName = "Services/PerformanceCalculator.exe";
+            pdcalcProcess.StartInfo.FileName = $"{Environment.CurrentDirectory}\\Services\\PerformanceCalculator.exe";
 #endif
 
 
 
             pdapiProcess.StartInfo.WorkingDirectory = PDS_FILE_PATH;
+            pdapiProcess.StartInfo.RedirectStandardOutput = false;
             pdapiProcess.StartInfo.RedirectStandardOutput = false;
             pdapiProcess.StartInfo.RedirectStandardError = false;
 

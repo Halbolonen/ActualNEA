@@ -463,6 +463,8 @@ ZFW: {route.Loadsheet.ZFW} kg
                                     table.Cell();
                                 });
 
+                            column.Item().PageBreak();
+
                             column.Item().Padding(2).BorderBottom(1).BorderLeft(1).BorderRight(1).BorderTop(1).Background(Colors.Grey.Lighten1).Text("ROUTE")
                                 .FontSize(16)
                                 .FontColor(Colors.Black)
@@ -582,7 +584,11 @@ ZFW: {route.Loadsheet.ZFW} kg
                                     .Padding(4);
                             }
 
-                            column.Item().PaddingBottom(50).Text($"Total ground distance: {route.TotalDistance:F0} nmi").FontFamily("Consolas").FontSize(12).AlignLeft();
+                            
+
+                            column.Item().Text($"{route.GetOneLineFormat()}");
+
+                            column.Item().Text($"Total ground distance: {route.TotalDistance:F0} nmi").FontFamily("Consolas").FontSize(12).AlignLeft();
 
                             column.Item().Padding(2).BorderBottom(1).BorderLeft(1).BorderRight(1).BorderTop(1).Background(Colors.Grey.Lighten1).Text("FLIGHT LOG")
                                 .FontSize(16)

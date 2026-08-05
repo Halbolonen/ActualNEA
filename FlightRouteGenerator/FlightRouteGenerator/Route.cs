@@ -23,6 +23,33 @@ namespace FlightRouteGenerator
         // information about the Top of Climb point
         public PDS_TCorTDInfo TD_Info { get; set; }
         // information about the Top of Descent point
+
+        public string GetOneLineFormat()
+        {
+            string singleLineRoute = $"{DepartureAirport.ident} ";
+            RouteLeg previousLeg = new RouteLeg();
+            previousLeg.Airway = new AirwayRecord();
+            previousLeg.Airway.isDirect = true;
+            foreach (RouteLeg leg in Legs)
+            {
+                if (leg.Airway.AirwayID != previousLeg.Airway.AirwayID)
+                {
+                    if (previousLeg.Airway.isDirect || leg.isAirportLeg)
+                    {
+                        singleLineRoute += $"{GLOBAL_SETTINGS.DIRECT_FORMAT} ";
+                    }
+                    else
+                    {
+                        singleLineRoute += $"{previousLeg.Airway.airwayName} ";
+                    }
+                    singleLineRoute += $"{leg.Waypoint.ident} ";
+                    previousLeg = leg;
+                }
+            }
+
+            return singleLineRoute;
+        }
+
         public Route()
         {
             enrouteWaypointCount = 0;
