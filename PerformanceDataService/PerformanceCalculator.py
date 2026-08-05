@@ -105,20 +105,7 @@ def get_oat_at_altitude(altitude: float):
 def get_oat_at_altitude_external(altitude_request: AltitudeRequest):
     return get_oat_at_altitude(altitude_request.altitude)
 
-# FIXME: not needed
-def get_distance_between_geo_coordinates(org_laty: float, org_lonx: float, dst_laty: float, dst_lonx: float):
-    DEG_TO_RAD: float = math.pi / 180
-    EARTH_RADIUS: float = 3440
-    # in nautical miles
 
-    phi1: float = org_laty * DEG_TO_RAD
-    phi2: float = dst_laty * DEG_TO_RAD
-    lambda1: float = org_lonx * DEG_TO_RAD
-    lambda2: float = dst_lonx * DEG_TO_RAD
-
-    # using the haversine formula to find great circle distance between geographical coordinates
-    h: float = math.sin((phi2 - phi1) / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin((lambda2 - lambda1) / 2) ** 2
-    return 2 * EARTH_RADIUS * math.asin(math.sqrt(h))
 
 def cas_to_tas(altitude: float, cas: float):
     # https://www.grc.nasa.gov/www/k-12/airplane/atmosmet.html
@@ -273,7 +260,7 @@ def simulate_flight(flight_request: FlightRequest):
                         longitude=previous_waypoint.longitude + travelled_distance_to_leg_length_ratio * lon_difference,
                         altitude=ff_params.alt,
                         tas=ff_params.tas,
-                        mach=0,
+                        mach=mach,
                         oat=get_oat_at_altitude(ff_params.alt),
                         previous_leg_index=next_waypoint_index - 1
                     )
@@ -294,7 +281,7 @@ def simulate_flight(flight_request: FlightRequest):
                         longitude=previous_waypoint.longitude + travelled_distance_to_leg_length_ratio * lon_difference,
                         altitude=ff_params.alt,
                         tas=ff_params.tas,
-                        mach=0,
+                        mach=mach,
                         oat=get_oat_at_altitude(ff_params.alt),
                         previous_leg_index=next_waypoint_index - 1
                     )
@@ -305,6 +292,7 @@ def simulate_flight(flight_request: FlightRequest):
                     sim_result.waypoint_id_to_output_info[next_waypoint_id].alt = round(ff_params.alt)
                     sim_result.waypoint_id_to_output_info[next_waypoint_id].tas = ff_params.tas
                     sim_result.waypoint_id_to_output_info[next_waypoint_id].oat = get_oat_at_altitude(ff_params.alt)
+                    sim_result.waypoint_id_to_output_info[next_waypoint_id].mach = mach
                     next_waypoint_index += 1
                     if (next_waypoint_index < len(flight_request.input_waypoint_info_list)):
                         next_waypoint_id = flight_request.input_waypoint_info_list[next_waypoint_index].waypoint_id

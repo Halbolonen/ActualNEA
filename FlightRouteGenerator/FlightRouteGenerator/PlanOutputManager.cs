@@ -10,14 +10,6 @@ namespace FlightRouteGenerator
 
     internal class PlanOutputManager
     {
-        private static void DrawLine()
-        {
-            for (int i = 0; i < Console.WindowWidth; i++)
-            {
-                Console.Write('-');
-            }
-            Console.WriteLine();
-        }
 
         private static double M_TO_FT = 3.28084;
 
@@ -485,7 +477,7 @@ namespace FlightRouteGenerator
                                             .Text($"\n{Math.Round((double)leg.Waypoint.Altitude / 100).ToString("000")}").AlignCenter().FontFamily("Consolas").FontSize(12);
                                         table.Cell()
                                             .Padding(4)
-                                            .Text($"\n{leg.Waypoint.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                            .Text($"{leg.Waypoint.MachNumber}\n{leg.Waypoint.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
                                         table.Cell()
                                             .Padding(4)
                                             .Text($"\n{leg.Waypoint.OAT - 273.15:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
@@ -503,7 +495,7 @@ namespace FlightRouteGenerator
                                                 .Text($"\n{Math.Round((double)route.TC_Info.Altitude * M_TO_FT / 100).ToString("000")}").AlignCenter().FontFamily("Consolas").FontSize(12);
                                             table.Cell()
                                                 .Padding(4)
-                                                .Text($"\n{route.TC_Info.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                                .Text($"{route.TC_Info.Mach}\n{route.TC_Info.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
                                             table.Cell()
                                                 .Padding(4)
                                                 .Text($"\n{route.TC_Info.OAT - 273.15:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
@@ -521,7 +513,7 @@ namespace FlightRouteGenerator
                                                 .Text($"\n{Math.Round((double)route.TD_Info.Altitude * M_TO_FT / 100).ToString("000")}").AlignCenter().FontFamily("Consolas").FontSize(12);
                                             table.Cell()
                                                 .Padding(4)
-                                                .Text($"\n{route.TD_Info.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
+                                                .Text($"{route.TD_Info.Mach}\n{route.TD_Info.TAS * MpS_TO_KTS:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
                                             table.Cell()
                                                 .Padding(4)
                                                 .Text($"\n{route.TD_Info.OAT - 273.15:F0}").FontFamily("Consolas").AlignCenter().FontSize(12);
@@ -569,7 +561,7 @@ namespace FlightRouteGenerator
                                     header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("AIRWAY\nNAME\nIDENT").FontFamily("Consolas").FontSize(12).SemiBold().AlignCenter();
                                     header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("\nLAT\nLONG").FontFamily("Consolas").FontSize(12).SemiBold().AlignCenter();
                                     header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("\n\nFL").FontFamily("Consolas").FontSize(12).SemiBold().AlignCenter();
-                                    header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("\n\nTAS").FontFamily("Consolas").FontSize(12).SemiBold().AlignCenter();
+                                    header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("\nMN\nTAS").FontFamily("Consolas").FontSize(12).SemiBold().AlignCenter();
                                     header.Cell().BorderBottom(1).AlignCenter().Padding(4).Text("\n\nOAT").FontFamily("Consolas").FontSize(12).SemiBold().AlignCenter();
                                 });
 

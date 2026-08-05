@@ -19,6 +19,8 @@ namespace FlightRouteGenerator
         // True AirSpeed for the aircraft to reach at this waypoint, in knots
         public double OAT { get; set; }
         // Outside Air Temperature at the waypoint, in centigrade
+        public double MachNumber { get; set; }
+        // Mach number of the aircraft at the waypoint
         public string Name { get; set; }
         
         public string WaypointID {

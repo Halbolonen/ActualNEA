@@ -150,6 +150,7 @@ namespace FlightRouteGenerator
                 leg.Waypoint.Altitude = (int)(M_TO_FT * wpInfo.Altitude);
                 leg.Waypoint.TAS = wpInfo.TAS;
                 leg.Waypoint.OAT = wpInfo.OAT;
+                leg.Waypoint.MachNumber = wpInfo.MachNumber;
             }
 
             return burnedFuel;
