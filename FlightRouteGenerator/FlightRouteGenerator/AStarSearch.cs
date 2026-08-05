@@ -271,9 +271,6 @@ namespace FlightRouteGenerator
                     //leg.Airway.airwayName = GLOBAL_SETTINGS.DIRECT_FORMAT;
                 }
             }
-#if DEBUG
-            Console.WriteLine($"trd: {route.TotalDistance}");
-#endif
             route.enrouteWaypointCount = route.Legs.Count - 1;
 
             return route;
