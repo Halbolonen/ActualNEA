@@ -266,7 +266,11 @@ namespace FlightRouteGenerator
 
 
             route.Legs = GetRouteToDestinationFromExpandedGraph(destinationNode, departureAirport, arrivalAirport);
-            Debug.WriteLine($"trd: {route.TotalDistance}");
+
+            foreach (RouteLeg leg in route.Legs)
+            {
+                route.TotalDistance += leg.Length;
+            }
             route.enrouteWaypointCount = route.Legs.Count - 1;
 
             return route;
