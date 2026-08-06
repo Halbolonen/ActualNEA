@@ -28,5 +28,9 @@ namespace FlightRouteGenerator
         // in kilograms
         public double TaxiFuel { get; set; }
         // in kilograms
+        public int PaxUnderMZFW { get; set; }
+        // maximum number of passengers that can be onboard with the aircraft under maximum zero fuel weight.
+        public int BagsCargoUnderMZFW { get; set; }
+        public int PayloadUnderMZFW { get; set; }
     }
 }

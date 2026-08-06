@@ -368,19 +368,19 @@ namespace FlightRouteGenerator
 
                                     table.Cell().BorderRight(1).Element(CellStyle).Text($"PAX");
                                     table.Cell().Element(CellStyle).Text($"{route.Loadsheet.Pax}");
-                                    table.Cell().Element(CellStyle).Text("");
+                                    table.Cell().Element(CellStyle).Text($"{route.Loadsheet.PaxUnderMZFW}");
                                     table.Cell().Element(CellStyle).Padding(8).Text("......");
                                     table.Cell();
 
                                     table.Cell().BorderRight(1).Element(CellStyle).Text("BAG/CARGO");
                                     table.Cell().Element(CellStyle).Text($"{Math.Round(route.Loadsheet.BagsAndCargo / 1000):F1}");
-                                    table.Cell().Element(CellStyle).Text("");
+                                    table.Cell().Element(CellStyle).Text($"{((double)route.Loadsheet.BagsCargoUnderMZFW / 1000):F1}");
                                     table.Cell().Element(CellStyle).Padding(8).Text("......");
                                     table.Cell();
 
                                     table.Cell().BorderRight(1).Element(CellStyle).Text("PAYLOAD");
                                     table.Cell().Element(CellStyle).Text($"{Math.Round(route.Loadsheet.Payload / 1000):F1}");
-                                    table.Cell().Element(CellStyle).Text("");
+                                    table.Cell().Element(CellStyle).Text($"{((double)route.Loadsheet.PayloadUnderMZFW / 1000):F1}");
                                     table.Cell().Element(CellStyle).Padding(8).Text("......");
                                     table.Cell();
 

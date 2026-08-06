@@ -80,6 +80,9 @@ namespace FlightRouteGenerator
 
             route.Loadsheet.BagsAndCargo = paxUnderMZFW * BAGS_AND_CARGO_PER_PAX;
             route.Loadsheet.Payload = payloadUnderMZFW;
+            route.Loadsheet.PaxUnderMZFW = paxUnderMZFW;
+            route.Loadsheet.BagsCargoUnderMZFW = (int)Math.Round(route.Loadsheet.BagsAndCargo);
+            route.Loadsheet.PayloadUnderMZFW = payloadUnderMZFW;
             route.Loadsheet.ZFW = route.Aircraft.OEW + route.Loadsheet.Payload;
 
             double tripFuel = await FlightSimulator.GetFlightFuelConsumption(route);
