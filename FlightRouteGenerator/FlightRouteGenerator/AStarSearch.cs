@@ -41,7 +41,7 @@ namespace FlightRouteGenerator
                     {
                         waypointPresentInASet = true;
 
-                        if (existingNode.gScore > newTemporaryNode.gScore)
+                        if (newTemporaryNode.gScore < existingNode.gScore)
                         {
 
                             existingNode.gScore = newTemporaryNode.gScore;
@@ -57,9 +57,10 @@ namespace FlightRouteGenerator
 
                     if (closedSet.TryGetValue(newWaypoint.WaypointID, out AStarNode closedNode))
                     {
+                        waypointPresentInASet = true;
+
                         if (newTemporaryNode.gScore < closedNode.gScore)
                         {
-                            waypointPresentInASet = true;
                             closedNode.gScore = newTemporaryNode.gScore;
                             closedNode.hScore = newTemporaryNode.hScore;
                             closedNode.UpdateAStarScore();
@@ -70,10 +71,6 @@ namespace FlightRouteGenerator
                             membersOfOpenSet[closedNode.associatedWaypoint.WaypointID] = closedNode;
                             
                             closedSet.Remove(closedNode.associatedWaypoint.WaypointID);
-                        }
-                        else
-                        {
-                            waypointPresentInASet = true;
                         }
                     }
 
