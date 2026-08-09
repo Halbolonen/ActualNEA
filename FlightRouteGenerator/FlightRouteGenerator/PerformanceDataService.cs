@@ -66,7 +66,7 @@ namespace FlightRouteGenerator
 
             pdapiProcess = new Process();
             pdapiProcess.StartInfo.UseShellExecute = IS_DEBUG;
-            pdapiProcess.StartInfo.CreateNoWindow = true;
+            pdapiProcess.StartInfo.CreateNoWindow = false;
 
 #if DEBUG
             pdapiProcess.StartInfo.FileName = PYTHON_FILE_PATH;
@@ -80,7 +80,7 @@ namespace FlightRouteGenerator
 
             pdcalcProcess = new Process();
             pdcalcProcess.StartInfo.UseShellExecute = IS_DEBUG;
-            pdcalcProcess.StartInfo.CreateNoWindow = true;
+            pdcalcProcess.StartInfo.CreateNoWindow = false;
 
 #if DEBUG
             pdcalcProcess.StartInfo.FileName = PYTHON_FILE_PATH;

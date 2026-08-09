@@ -85,7 +85,16 @@ namespace FlightRouteGenerator
             route.Loadsheet.PayloadUnderMZFW = payloadUnderMZFW;
             route.Loadsheet.ZFW = route.Aircraft.OEW + route.Loadsheet.Payload;
 
-            double tripFuel = await FlightSimulator.GetFlightFuelConsumption(route);
+            double tripFuel;
+
+            try
+            {
+                tripFuel = await FlightSimulator.GetFlightFuelConsumption(route);
+            }
+            catch (PerformanceEvaluationFailedException)
+            {
+                throw;
+            }
 
             int lowPaxLimit = Math.Max(1, route.Aircraft.PassengerLoadLimits.low / 4);
 
@@ -151,10 +160,9 @@ namespace FlightRouteGenerator
 
         static AircraftPerformanceAnalyser()
         {
-            SupportedAircraftTypes = new HashSet<string> { "A19N", "A20N", "A21N", "A318", "A319", "A320", "A321", "A332", "A333", "A343",
+            SupportedAircraftTypes = new HashSet<string> { "A19N", "A20N", "A21N", "A320", "A321", "A332", "A333", "A343",
                 "A359", "A388", "B37M", "B38M", "B39M", "B3XM", "B734", "B737", "B738", "B739",
-                "B744", "B748", "B752", "B763", "B772", "B773", "B77W", "B788", "B789", "C550",
-                "E145", "E170", "E190", "E195", "E75L", "GLF6" };
+                "B744", "B748", "B752", "B763", "B772", "B773", "B77W", "B788", "B789", "GLF6" };
         }
     }
 }

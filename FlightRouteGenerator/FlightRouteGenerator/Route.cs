@@ -34,13 +34,13 @@ namespace FlightRouteGenerator
             {
                 if (leg.Airway.airwayName != previousLeg.Airway.airwayName)
                 {
-                    if (previousLeg.Airway.isDirect || leg.isAirportLeg)
+                    if (leg.Airway.isDirect || leg.isAirportLeg)
                     {
                         singleLineRoute += $"{GLOBAL_SETTINGS.DIRECT_FORMAT} ";
                     }
                     else
                     {
-                        singleLineRoute += $"{previousLeg.Airway.airwayName} ";
+                        singleLineRoute += $"{leg.Airway.airwayName} ";
                     }
                     singleLineRoute += $"{leg.Waypoint.ident} ";
                 }

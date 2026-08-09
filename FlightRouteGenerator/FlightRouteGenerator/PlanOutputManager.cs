@@ -581,7 +581,7 @@ namespace FlightRouteGenerator
 
             bool debugLiveView;
 #if DEBUG
-            debugLiveView = true;
+            debugLiveView = false;
 #else
             debugLiveView = false;
 #endif

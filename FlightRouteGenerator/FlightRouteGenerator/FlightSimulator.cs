@@ -146,11 +146,18 @@ namespace FlightRouteGenerator
 
             foreach (RouteLeg leg in route.Legs)
             {
-                WaypointTargets wpInfo = simResult.WaypointIDToOutputInfo[leg.Waypoint.WaypointID];
-                leg.Waypoint.Altitude = (int)(M_TO_FT * wpInfo.Altitude);
-                leg.Waypoint.TAS = wpInfo.TAS;
-                leg.Waypoint.OAT = wpInfo.OAT;
-                leg.Waypoint.MachNumber = wpInfo.MachNumber;
+                try
+                {
+                    WaypointTargets wpInfo = simResult.WaypointIDToOutputInfo[leg.Waypoint.WaypointID];
+                    leg.Waypoint.Altitude = (int)(M_TO_FT * wpInfo.Altitude);
+                    leg.Waypoint.TAS = wpInfo.TAS;
+                    leg.Waypoint.OAT = wpInfo.OAT;
+                    leg.Waypoint.MachNumber = wpInfo.MachNumber;
+                }
+                catch (System.Collections.Generic.KeyNotFoundException)
+                {
+                    throw new PerformanceEvaluationFailedException();
+                }
             }
 
             return burnedFuel;

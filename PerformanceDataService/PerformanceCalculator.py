@@ -99,7 +99,7 @@ def get_oat_at_altitude(altitude: float):
     if (altitude < 11000):
         return t_0 - (altitude / 1000) * ISA_LAPSE_RATE
     else:
-        return -56.46
+        return 216.69
 
 @performance_calculator.post("/get_oat_at_altitude")
 def get_oat_at_altitude_external(altitude_request: AltitudeRequest):

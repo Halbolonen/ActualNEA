@@ -92,16 +92,8 @@ namespace FlightRouteGenerator
                 Console.WriteLine("\nDone!\n");
                 Console.Write("Evaluating aircraft performance...");
 
-
-                try
-                {
-                    route = await AircraftPerformanceAnalyser.AddVerticalProfileToRoute(route);
-                    Console.WriteLine("\nDone!\n");
-                }
-                catch (InsufficientAircraftRangeException)
-                {
-                    throw;
-                }
+                route = await AircraftPerformanceAnalyser.AddVerticalProfileToRoute(route);
+                Console.WriteLine("\nDone!\n");
 
                 Console.Clear();
                 Console.WriteLine("Use the menu to select the formats you want your flight plan to be outputted in.\n");
@@ -140,6 +132,10 @@ namespace FlightRouteGenerator
             catch (InsufficientAircraftRangeException)
             {
                 Console.WriteLine($"\n\nUnfortunately, the maximum range of your selected aircraft, {acftTypeInput}, is too low for your selected flight.\nTry again for an aircraft with a longer range, or try a shorter flight.");
+            }
+            catch (PerformanceEvaluationFailedException)
+            {
+                Console.WriteLine($"\n\nUnfortunately, performace evaluation could not be completed for your selected aircraft, {acftTypeInput}. Try again with a different aircraft type or route.");
             }
         }
 
