@@ -20,6 +20,7 @@ namespace FlightRouteGenerator
         public static Dictionary<string, Record> waypointRecordDict { get; private set; }
         public static Dictionary<string, Record> airportRecordDict { get; private set; }
         public static Dictionary<string, Record> airwayRecordDict { get; private set; }
+        public static Dictionary<int, Record> vorRecordDict { get; private set; }
         public static HashSet<string> VORIdentHashSet { get; private set; }
         public static HashSet<string> NDBIdentHashSet { get; private set; }
         public static Dictionary<string, List<(WaypointRecord, AirwayRecord)>> outgoingAirwaysByWaypointID { get; set; }
@@ -35,7 +36,7 @@ namespace FlightRouteGenerator
             {
                 case "waypoint":
                     command =
-                @"SELECT waypoint_id, ident, lonx, laty, name
+                @"SELECT waypoint_id, ident, lonx, laty, name, nav_id
                 FROM waypoint";
                     break;
 
@@ -54,7 +55,8 @@ namespace FlightRouteGenerator
                     break;
 
                 case "vor":
-                    command = @"SELECT ident FROM vor";
+                    command = @"SELECT vor_id, ident, name
+                    FROM vor";
                     break;
 
                 case "ndb":
@@ -85,6 +87,15 @@ namespace FlightRouteGenerator
                         if (!dataReader.IsDBNull(4))
                         {
                             wpRecord.Name = (string)dataReader["name"];
+                        }
+                        else
+                        {
+                            wpRecord.Name = "";
+                        }
+
+                        if (!dataReader.IsDBNull(5))
+                        {
+                            wpRecord.NavID = (string)dataReader["nav_id"];
                         }
                         else
                         {
@@ -131,6 +142,14 @@ namespace FlightRouteGenerator
 
                     case "vor":
                         VORIdentHashSet.Add((string)dataReader["ident"]);
+
+                        VORRecord vorRecord = new VORRecord();
+
+                        vorRecord.VOR_ID = Convert.ToString(dataReader["vor_id"]);
+                        vorRecord.ident = (string)dataReader["ident"];
+                        vorRecord.name = (string)dataReader["name"];
+
+                        recordDict.Add(vorRecord.VOR_ID, vorRecord);
                         break;
 
                     case "ndb":
@@ -202,7 +221,7 @@ namespace FlightRouteGenerator
                 else
                 {
                     wpRecord.Type = (int)WaypointType.NamedFix;
-                }
+                } 
             }
 
             outgoingAirwaysByWaypointID = new Dictionary<string, List<(WaypointRecord, AirwayRecord)>>();
