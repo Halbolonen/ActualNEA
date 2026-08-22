@@ -17,19 +17,17 @@ namespace FlightRouteGenerator
         private static string NAV_DB_FILE_PATH = $"Data Source=\"{Directory.GetCurrentDirectory()}\\Data\\navdata.sqlite\";";
 #endif
         private static SQLiteConnection navDBConnection = new SQLiteConnection(NAV_DB_FILE_PATH);
-        public static Dictionary<string, Record> waypointRecordDict { get; private set; }
-        public static Dictionary<string, Record> airportRecordDict { get; private set; }
-        public static Dictionary<string, Record> airwayRecordDict { get; private set; }
-        public static Dictionary<int, Record> vorRecordDict { get; private set; }
-        public static HashSet<string> VORIdentHashSet { get; private set; }
-        public static HashSet<string> NDBIdentHashSet { get; private set; }
+        public static Dictionary<string, WaypointRecord> waypointRecordDict { get; private set; }
+        public static Dictionary<string, AirportRecord> airportRecordDict { get; private set; }
+        public static Dictionary<string, AirwayRecord> airwayRecordDict { get; private set; }
+        public static Dictionary<string, VORRecord> vorRecordDict { get; private set; }
+        public static Dictionary<string, NDBRecord> ndbRecordDict { get; private set; }
         public static Dictionary<string, List<(WaypointRecord, AirwayRecord)>> outgoingAirwaysByWaypointID { get; set; }
         private static HashSet<string> connectedWaypointIDs = new HashSet<string>();
         public static bool Initialised { get; private set; }
 
-        private static Dictionary<string, Record> LoadRecords(string typeOfRecord)
+        private static void LoadRecords(string typeOfRecord)
         {
-            Dictionary<string, Record> recordDict = new Dictionary<string, Record>();
             navDBConnection.Open();
             string command = "";
             switch (typeOfRecord)
@@ -60,7 +58,7 @@ namespace FlightRouteGenerator
                     break;
 
                 case "ndb":
-                    command = @"SELECT ident FROM ndb";
+                    command = @"SELECT ndb_id, ident, name FROM ndb";
                     break;
 
                 default:
@@ -95,18 +93,15 @@ namespace FlightRouteGenerator
 
                         if (!dataReader.IsDBNull(5))
                         {
-                            wpRecord.NavID = (string)dataReader["nav_id"];
-                        }
-                        else
-                        {
-                            wpRecord.Name = "";
+                            wpRecord.NavID = Convert.ToString(dataReader["nav_id"]);
                         }
 
-                        recordDict.Add(wpRecord.WaypointID, wpRecord);
+                        waypointRecordDict.Add(wpRecord.WaypointID, wpRecord);
                         break;
 
                     case "airport":
                         AirportRecord apRecord = new AirportRecord();
+                        // modify the globals instead of recordDict
 
                         apRecord.AirportID = Convert.ToString(dataReader["airport_id"]);
                         apRecord.ident = (string)dataReader["ident"];
@@ -116,7 +111,7 @@ namespace FlightRouteGenerator
                         apRecord.altitude = (int)(Convert.ToInt32(dataReader["altitude"]) / 3.281);
                         // converting altitude from feet to metres
 
-                        recordDict.Add(apRecord.AirportID, apRecord);
+                        airportRecordDict.Add(apRecord.AirportID, apRecord);
                         break;
 
                     case "airway":
@@ -137,45 +132,47 @@ namespace FlightRouteGenerator
                         connectedWaypointIDs.Add(awRecord.fromWaypointID);
                         connectedWaypointIDs.Add(awRecord.toWaypointID);
 
-                        recordDict.Add(awRecord.AirwayID, awRecord);
+                        airwayRecordDict.Add(awRecord.AirwayID, awRecord);
                         break;
 
                     case "vor":
-                        VORIdentHashSet.Add((string)dataReader["ident"]);
-
                         VORRecord vorRecord = new VORRecord();
 
                         vorRecord.VOR_ID = Convert.ToString(dataReader["vor_id"]);
                         vorRecord.ident = (string)dataReader["ident"];
                         vorRecord.name = (string)dataReader["name"];
 
-                        recordDict.Add(vorRecord.VOR_ID, vorRecord);
+                        vorRecordDict.Add(vorRecord.VOR_ID, vorRecord);
                         break;
 
                     case "ndb":
-                        NDBIdentHashSet.Add((string)dataReader["ident"]);
+                        NDBRecord ndbRecord = new NDBRecord();
+
+                        ndbRecord.NDB_ID = Convert.ToString(dataReader["ndb_id"]);
+                        ndbRecord.ident = (string)dataReader["ident"];
+                        ndbRecord.name = (string)dataReader["name"];
+
+                        ndbRecordDict.Add(ndbRecord.NDB_ID, ndbRecord);
                         break;
                 }
             }
 
             navDBConnection.Close();
-
-            return recordDict;
         }
 
-        public static Dictionary<string, Record> LoadWaypointRecords()
+        public static void LoadWaypointRecords()
         {
-            return LoadRecords("waypoint");
+            LoadRecords("waypoint");
         }
 
-        public static Dictionary<string, Record> LoadAirportRecords()
+        public static void LoadAirportRecords()
         {
-            return LoadRecords("airport");
+            LoadRecords("airport");
         }
 
-        public static Dictionary<string, Record> LoadAirwayRecords()
+        public static void LoadAirwayRecords()
         {
-            return LoadRecords("airway");
+            LoadRecords("airway");
         }
 
         public static void LoadVORIdentHashSet()
@@ -190,15 +187,15 @@ namespace FlightRouteGenerator
 
         public static void Initialise()
         {
-            waypointRecordDict = new Dictionary<string, Record>();
-            airportRecordDict = new Dictionary<string, Record>();
-            airwayRecordDict = new Dictionary<string, Record>();
-            VORIdentHashSet = new HashSet<string>();
-            NDBIdentHashSet = new HashSet<string>();
+            waypointRecordDict = new Dictionary<string, WaypointRecord>();
+            airportRecordDict = new Dictionary<string, AirportRecord>();
+            airwayRecordDict = new Dictionary<string, AirwayRecord>();
+            vorRecordDict = new Dictionary<string, VORRecord>();
+            ndbRecordDict = new Dictionary<string, NDBRecord>();
 
-            waypointRecordDict = LoadWaypointRecords();
-            airportRecordDict = LoadAirportRecords();
-            airwayRecordDict = LoadAirwayRecords();
+            LoadWaypointRecords();
+            LoadAirportRecords();
+            LoadAirwayRecords();
             LoadVORIdentHashSet();
             LoadNDBIdentHashSet();
 
@@ -210,13 +207,42 @@ namespace FlightRouteGenerator
                     waypointRecordDict.Remove(wpRecord.WaypointID);
                 }
 
-                if (VORIdentHashSet.Contains(wpRecord.ident))
+                if (wpRecord.NavID != "" && wpRecord.NavID != null)
                 {
-                    wpRecord.Type = (int)WaypointType.VOR;
-                }
-                else if (NDBIdentHashSet.Contains(wpRecord.ident))
-                {
-                    wpRecord.Type = (int)WaypointType.NDB;
+                    bool navTypeDecided = false;
+                    // check against ndb and vor
+                    NDBRecord ndbRecord;
+
+                    if (ndbRecordDict.TryGetValue(wpRecord.NavID, out ndbRecord))
+                    {
+                        if (ndbRecord.ident == wpRecord.ident)
+                        {
+                            wpRecord.Type = (int)WaypointType.NDB;
+                            wpRecord.Name = ndbRecord.name;
+                            navTypeDecided = true;
+                        }
+                    }
+
+                    if (!navTypeDecided)
+                    {
+                        VORRecord vorRecord;
+
+                        if (vorRecordDict.TryGetValue(wpRecord.NavID, out vorRecord))
+                        {
+                            if (vorRecord.ident == wpRecord.ident)
+                            {
+                                wpRecord.Type = (int)WaypointType.VOR;
+                                wpRecord.Name = vorRecord.name;
+                                navTypeDecided = true;
+                            }
+                        }
+                    }
+
+                    if (!navTypeDecided)
+                    {
+                        wpRecord.Name = "";
+                    }
+
                 }
                 else
                 {
@@ -225,7 +251,7 @@ namespace FlightRouteGenerator
             }
 
             outgoingAirwaysByWaypointID = new Dictionary<string, List<(WaypointRecord, AirwayRecord)>>();
-            Record toWaypoint = new Record();
+            WaypointRecord toWaypoint = new WaypointRecord();
 
             foreach (AirwayRecord airwayRecord in airwayRecordDict.Values)
             {
