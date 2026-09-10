@@ -586,6 +586,9 @@ namespace FlightRouteGenerator
             debugLiveView = false;
 #endif
 
+            // TODO: QUESTPDF COMPANION NOT PRESENT ON COLLEGE PCs SO THIS FEATURE IS DISABLED, REMOVE FROM FINAL CODE
+            debugLiveView = false;
+
             if (debugLiveView)
             {
                 document.ShowInCompanion(12500);
@@ -593,11 +596,36 @@ namespace FlightRouteGenerator
             }
             else
             {
+                // rename the file if the intended file location cannot be written to e.g. because it is already in use
                 string fileName = $"{route.DepartureAirport.ident}{route.ArrivalAirport.ident}_Plan.pdf";
-                string filePath = $"{SHGetKnownFolderPath(KnownFolderGUIDs["Downloads"], 0)}\\{fileName}";
+                string filePath = $"{SHGetKnownFolderPath(KnownFolderGUIDs["Downloads"], 0)}\\";
+                bool successfulWrite = false;
+                int lastCloneNumber = 0;
 
-                using FileStream stream = new FileStream(filePath, FileMode.Create);
-                document.GeneratePdf(stream);
+                while (!successfulWrite)
+                {
+                    try
+                    {
+                        using FileStream stream = new FileStream(filePath + fileName, FileMode.Create);
+                        document.GeneratePdf(stream);
+                        successfulWrite = true;
+                    }
+                    catch (IOException ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        if (fileName[fileName.Length - 1] == ')')
+                        {
+                            fileName = fileName.Substring(0, fileName.Length - 6);
+                            fileName += Convert.ToString(++lastCloneNumber) + ')' + ".pdf";
+                        }
+                        else
+                        {
+                            fileName = fileName.Substring(0, fileName.Length - 4);
+                            fileName += '(' + Convert.ToString(++lastCloneNumber) + ')' + ".pdf";
+                        }
+                    }
+                }
+
 
                 return $"PDF File:\nFlight plan exported as {fileName} to {filePath}\n";
             }
