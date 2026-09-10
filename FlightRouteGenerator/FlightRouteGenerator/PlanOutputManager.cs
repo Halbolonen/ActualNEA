@@ -610,9 +610,8 @@ namespace FlightRouteGenerator
                         document.GeneratePdf(stream);
                         successfulWrite = true;
                     }
-                    catch (IOException ex)
+                    catch (IOException)
                     {
-                        Console.WriteLine(ex.Message);
                         if (fileName[fileName.Length - 1] == ')')
                         {
                             fileName = fileName.Substring(0, fileName.Length - 6);
