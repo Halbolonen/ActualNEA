@@ -12,7 +12,7 @@ namespace FlightRouteGenerator
     internal static class NavdataInteractor
     {
 #if DEBUG
-        private static string NAV_DB_FILE_PATH = $"Data Source=\"{Directory.GetCurrentDirectory()}\\Data\\navdata.sqlite\";";
+        private static string NAV_DB_FILE_PATH = $"Data Source=\"{Directory.GetCurrentDirectory()}\\..\\Data\\navdata.sqlite\";";
 #else
         private static string NAV_DB_FILE_PATH = $"Data Source=\"{Directory.GetCurrentDirectory()}\\Data\\navdata.sqlite\";";
 #endif
@@ -28,6 +28,7 @@ namespace FlightRouteGenerator
 
         private static void LoadRecords(string typeOfRecord)
         {
+            Debug.WriteLine(NAV_DB_FILE_PATH);
             navDBConnection.Open();
             string command = "";
             switch (typeOfRecord)
