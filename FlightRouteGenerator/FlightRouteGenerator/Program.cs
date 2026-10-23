@@ -216,9 +216,6 @@ namespace FlightRouteGenerator
                 PerformanceDataService.KillService();
             }
             Console.WriteLine("\nDone!");
-
-            Console.WriteLine("\n\nPress any key to exit.");
-            Console.ReadKey();
             Console.CursorVisible = true;
         }
     }
