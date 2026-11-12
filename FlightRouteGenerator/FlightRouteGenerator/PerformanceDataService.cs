@@ -93,13 +93,12 @@ namespace FlightRouteGenerator
 
 
             pdapiProcess.StartInfo.WorkingDirectory = PDS_FILE_PATH;
-            pdapiProcess.StartInfo.RedirectStandardOutput = false;
-            pdapiProcess.StartInfo.RedirectStandardOutput = false;
-            pdapiProcess.StartInfo.RedirectStandardError = false;
+            pdapiProcess.StartInfo.RedirectStandardOutput = true;
+            pdapiProcess.StartInfo.RedirectStandardError = true;
 
             pdcalcProcess.StartInfo.WorkingDirectory = PDS_FILE_PATH;
-            pdcalcProcess.StartInfo.RedirectStandardOutput = false;
-            pdcalcProcess.StartInfo.RedirectStandardError = false;
+            pdcalcProcess.StartInfo.RedirectStandardOutput = true;
+            pdcalcProcess.StartInfo.RedirectStandardError = true;
 
             pdapiProcess.Start();
             pdcalcProcess.Start();
@@ -132,8 +131,8 @@ namespace FlightRouteGenerator
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.GetType());
-                    Console.WriteLine(ex.Message);
+                    Debug.WriteLine(ex.GetType());
+                    Debug.WriteLine(ex.Message);
                 }
 
                 await Task.Delay(100);
