@@ -131,8 +131,7 @@ def cas_to_tas(altitude: float, cas: float):
     P: float
     if (altitude < 11000):
         P = p_0 * math.pow(t / t_0, 5.256)
-        # TODO: label magic number -5.256
-        # static pressure at altitude
+        # 5.256: static pressure at altitude
     else:
         P = 22.65 * math.e ** (1.73 - 0.000157 * altitude)
 
