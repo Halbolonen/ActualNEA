@@ -135,7 +135,7 @@ namespace FlightRouteGenerator
             }
             catch (PerformanceEvaluationFailedException)
             {
-                Console.WriteLine($"\n\nUnfortunately, performace evaluation could not be completed for your selected aircraft, {acftTypeInput}. Try again with a different aircraft type or route.");
+                Console.WriteLine($"\n\nUnfortunately, performance evaluation could not be completed for your selected aircraft, {acftTypeInput}. Try again with a different aircraft type or route.");
             }
         }
 
